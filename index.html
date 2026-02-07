@@ -2,41 +2,468 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your Name</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ayashkant Mishra • Academics + Music</title>
+  <meta name="description" content="Personal website: academics, research, projects, and music." />
+
   <style>
-    body { font-family: system-ui, Arial; max-width: 900px; margin: 40px auto; padding: 0 16px; }
-    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-    nav a { margin-right: 12px; text-decoration: none; }
-    .card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; margin-top: 16px; }
+    :root{
+      --bg0:#0b1020;
+      --bg1:#101a3a;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.10);
+      --text:#eef2ff;
+      --muted:rgba(238,242,255,.75);
+      --line: rgba(255,255,255,.14);
+      --shadow: 0 20px 60px rgba(0,0,0,.40);
+      --r: 18px;
+      --accent1:#7c3aed; /* purple */
+      --accent2:#06b6d4; /* cyan */
+      --accent3:#f97316; /* orange */
+      --accent4:#22c55e; /* green */
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.35), transparent 55%),
+        radial-gradient(1200px 800px at 80% 20%, rgba(6,182,212,.28), transparent 55%),
+        radial-gradient(900px 700px at 60% 80%, rgba(249,115,22,.22), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:1100px; margin:0 auto; padding:24px 18px 72px}
+
+    /* Top nav */
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px; padding:14px 16px;
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--line);
+      border-radius:999px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.20);
+      position: sticky; top: 14px; z-index: 10;
+    }
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px}
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+    }
+    .links{display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end}
+    .chip{
+      padding:8px 12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      border-radius:999px;
+      font-size:14px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .chip:hover{transform: translateY(-1px); background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22)}
+
+    /* Hero */
+    .hero{margin-top:22px; display:grid; grid-template-columns: 1.25fr .75fr; gap:18px}
+    @media (max-width: 900px){ .hero{grid-template-columns:1fr} }
+
+    .panel{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .panel::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(600px 300px at 20% 0%, rgba(124,58,237,.35), transparent 60%),
+                  radial-gradient(500px 250px at 90% 20%, rgba(6,182,212,.28), transparent 60%);
+      pointer-events:none;
+    }
+    .panel > *{position:relative}
+    .hero-main{padding:26px}
+    .kicker{
+      display:inline-flex; gap:10px; align-items:center;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      font-size:13px; color:var(--muted);
+    }
+    .spark{
+      width:10px; height:10px; border-radius:3px;
+      background: linear-gradient(135deg, var(--accent3), var(--accent2));
+      transform: rotate(18deg);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+    }
+    h1{margin:14px 0 10px; font-size:46px; line-height:1.06}
+    @media (max-width: 520px){ h1{font-size:36px} }
+    .sub{
+      margin:0; color:var(--muted); font-size:16px; line-height:1.6;
+      max-width: 60ch;
+    }
+
+    .cta-row{display:flex; gap:12px; flex-wrap:wrap; margin-top:16px}
+    .btn{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:11px 14px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      font-weight:700;
+      transition: transform .15s ease, filter .15s ease, background .15s ease;
+    }
+    .btn:hover{transform: translateY(-1px); background: rgba(255,255,255,.12)}
+    .btn.primary{
+      border:none;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      box-shadow: 0 14px 30px rgba(124,58,237,.22), 0 14px 30px rgba(6,182,212,.18);
+    }
+    .btn.primary:hover{filter: brightness(1.05)}
+    .btn .icon{opacity:.95}
+
+    /* Side card */
+    .hero-side{padding:22px}
+    .mini-title{font-weight:800; margin:0 0 10px; letter-spacing:.2px}
+    .mini{
+      display:grid; gap:10px;
+    }
+    .stat{
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      display:flex; align-items:flex-start; gap:10px;
+    }
+    .badge{
+      min-width:34px; height:34px; border-radius:12px;
+      display:grid; place-items:center;
+      background: linear-gradient(135deg, rgba(249,115,22,.9), rgba(34,197,94,.75));
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+      font-weight:900;
+    }
+    .stat p{margin:0; color:var(--muted); font-size:14px; line-height:1.45}
+    .stat b{color:var(--text)}
+
+    /* Sections */
+    .grid{
+      margin-top:18px;
+      display:grid; grid-template-columns: 1fr 1fr; gap:18px;
+    }
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+    .section{padding:22px}
+    .section h2{margin:0 0 10px; font-size:22px}
+    .section .lead{margin:0 0 14px; color:var(--muted); line-height:1.7}
+
+    .cards{display:grid; grid-template-columns:1fr; gap:12px}
+    .card{
+      padding:14px;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .card:hover{transform: translateY(-2px); background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22)}
+    .card h3{margin:0 0 6px; font-size:16px}
+    .card p{margin:0; color:var(--muted); font-size:14px; line-height:1.6}
+    .tags{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .tag{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(238,242,255,.88);
+    }
+
+    /* Socials */
+    .socials{
+      margin-top:18px;
+      padding:18px;
+      border-radius: var(--r);
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      box-shadow: 0 14px 40px rgba(0,0,0,.25);
+    }
+    .socials-head{
+      display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .socials-head h2{margin:0; font-size:20px}
+    .socials-head p{margin:0; color:var(--muted); font-size:14px}
+
+    .social-grid{
+      display:grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap:10px;
+    }
+    @media (max-width: 900px){ .social-grid{grid-template-columns: repeat(3, 1fr)} }
+    @media (max-width: 520px){ .social-grid{grid-template-columns: repeat(2, 1fr)} }
+
+    .social{
+      padding:12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      display:flex; gap:10px; align-items:center;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+      min-height:54px;
+    }
+    .social:hover{transform: translateY(-2px); background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22)}
+    .sicon{
+      width:34px; height:34px; border-radius:12px;
+      display:grid; place-items:center;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+      font-weight:900;
+    }
+    .s1{background: linear-gradient(135deg, var(--accent2), var(--accent4))}
+    .s2{background: linear-gradient(135deg, #ff0033, #ffb703)}
+    .s3{background: linear-gradient(135deg, #111827, #6b7280)}
+    .s4{background: linear-gradient(135deg, #0ea5e9, #6366f1)}
+    .s5{background: linear-gradient(135deg, #22c55e, #14b8a6)}
+    .s6{background: linear-gradient(135deg, var(--accent1), var(--accent3))}
+    .social b{display:block; font-size:13px}
+    .social span{display:block; color:var(--muted); font-size:12px; margin-top:2px}
+
+    /* Footer */
+    footer{
+      margin-top:18px;
+      color: rgba(238,242,255,.65);
+      text-align:center;
+      font-size:13px;
+    }
+    .tiny{
+      display:inline-flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap;
+      padding:10px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+    }
+    .sep{opacity:.5}
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>Your Name</h1>
-    <nav>
-      <a href="#about">About</a>
-      <a href="#projects">Projects</a>
-      <a href="#contact">Contact</a>
-    </nav>
-  </header>
+  <div class="wrap">
 
-  <section id="about" class="card">
-    <h2>About</h2>
-    <p>Write a short bio here.</p>
-  </section>
+    <!-- NAV -->
+    <div class="nav">
+      <div class="brand">
+        <span class="dot"></span>
+        <span>Ayashkant Mishra</span>
+      </div>
+      <div class="links">
+        <a class="chip" href="#academics">Academics</a>
+        <a class="chip" href="#music">Music</a>
+        <a class="chip" href="#socials">Socials</a>
+      </div>
+    </div>
 
-  <section id="projects" class="card">
-    <h2>Projects</h2>
-    <ul>
-      <li>Project 1 — <a href="#">link</a></li>
-      <li>Project 2 — <a href="#">link</a></li>
-    </ul>
-  </section>
+    <!-- HERO -->
+    <div class="hero">
+      <div class="panel hero-main">
+        <div class="kicker"><span class="spark"></span> PhD • Software Engineering • Tabla</div>
 
-  <section id="contact" class="card">
-    <h2>Contact</h2>
-    <p>Email: you@example.com</p>
-  </section>
+        <h1>Research by day, rhythm by heart.</h1>
+
+        <p class="sub">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+        </p>
+
+        <div class="cta-row">
+          <!-- replace # with real links -->
+          <a class="btn primary" href="#socials">
+            <span class="icon">✨</span> Connect
+          </a>
+          <a class="btn" href="#academics">
+            <span class="icon">📚</span> Explore Academics
+          </a>
+          <a class="btn" href="#music">
+            <span class="icon">🥁</span> Explore Music
+          </a>
+        </div>
+      </div>
+
+      <div class="panel hero-side">
+        <p class="mini-title">Quick Snapshot</p>
+        <div class="mini">
+          <div class="stat">
+            <div class="badge">A</div>
+            <p><b>Academics</b><br/>Lorem ipsum: research areas, papers, projects, and teaching.</p>
+          </div>
+          <div class="stat">
+            <div class="badge">M</div>
+            <p><b>Music</b><br/>Lorem ipsum: tabla performances, practice logs, and uploads.</p>
+          </div>
+          <div class="stat">
+            <div class="badge">★</div>
+            <p><b>Now</b><br/>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TWO MAIN SECTIONS -->
+    <div class="grid">
+
+      <!-- ACADEMICS -->
+      <section id="academics" class="panel section">
+        <h2>Academics</h2>
+        <p class="lead">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum at arcu sit amet
+          sapien varius tempor. Aliquam erat volutpat.
+        </p>
+
+        <div class="cards">
+          <div class="card">
+            <h3>Research Focus</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque placerat, eros at fermentum
+              scelerisque, magna arcu pellentesque urna, vitae tempor lectus lacus sit amet erat.
+            </p>
+            <div class="tags">
+              <span class="tag">Cross-Project Prediction</span>
+              <span class="tag">Software Engineering</span>
+              <span class="tag">ML + Domain Adaptation</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Publications</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Add your papers, DOI links, and citations here.
+            </p>
+            <div class="tags">
+              <span class="tag">Paper 1</span>
+              <span class="tag">Paper 2</span>
+              <span class="tag">Paper 3</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Teaching & Mentoring</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Add courses, lab manuals, and student resources.
+            </p>
+            <div class="tags">
+              <span class="tag">DBMS</span>
+              <span class="tag">Git/GitHub</span>
+              <span class="tag">AI / ML</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MUSIC -->
+      <section id="music" class="panel section">
+        <h2>Music</h2>
+        <p class="lead">
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur non nulla sit amet nisl tempus
+          convallis quis ac lectus.
+        </p>
+
+        <div class="cards">
+          <div class="card">
+            <h3>Tabla Journey</h3>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Add your inspirations, gharana/style, and milestones.
+            </p>
+            <div class="tags">
+              <span class="tag">Riyaz</span>
+              <span class="tag">Tala & Layakari</span>
+              <span class="tag">Performances</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Videos & Recordings</h3>
+            <p>
+              Lorem ipsum dolor sit amet. Embed YouTube links or list your playlists here.
+            </p>
+            <div class="tags">
+              <span class="tag">YouTube Playlist</span>
+              <span class="tag">Shorts</span>
+              <span class="tag">Live</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Upcoming</h3>
+            <p>
+              Lorem ipsum dolor sit amet. Add events, collaborations, releases, or practice goals.
+            </p>
+            <div class="tags">
+              <span class="tag">Collabs</span>
+              <span class="tag">Gigs</span>
+              <span class="tag">New Compositions</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- SOCIALS -->
+    <section id="socials" class="socials">
+      <div class="socials-head">
+        <h2>Socials & Links</h2>
+        <p>Replace the <b>#</b> with your real profile links.</p>
+      </div>
+
+      <div class="social-grid">
+        <a class="social" href="#" target="_blank" rel="noreferrer">
+          <div class="sicon s1">GS</div>
+          <div><b>Google Scholar</b><span>Publications & citations</span></div>
+        </a>
+
+        <a class="social" href="#" target="_blank" rel="noreferrer">
+          <div class="sicon s2">YT</div>
+          <div><b>YouTube</b><span>Music uploads</span></div>
+        </a>
+
+        <a class="social" href="#" target="_blank" rel="noreferrer">
+          <div class="sicon s3">GH</div>
+          <div><b>GitHub</b><span>Code & projects</span></div>
+        </a>
+
+        <a class="social" href="#" target="_blank" rel="noreferrer">
+          <div class="sicon s4">in</div>
+          <div><b>LinkedIn</b><span>Professional profile</span></div>
+        </a>
+
+        <a class="social" href="mailto:you@example.com">
+          <div class="sicon s5">@</div>
+          <div><b>Email</b><span>you@example.com</span></div>
+        </a>
+
+        <a class="social" href="#" target="_blank" rel="noreferrer">
+          <div class="sicon s6">CV</div>
+          <div><b>CV / Resume</b><span>PDF link</span></div>
+        </a>
+      </div>
+    </section>
+
+    <footer>
+      <div class="tiny">
+        <span>© <span id="y"></span> Ayashkant Mishra</span>
+        <span class="sep">•</span>
+        <span>Built with HTML + CSS</span>
+        <span class="sep">•</span>
+        <a href="#top">Back to top</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // footer year
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
