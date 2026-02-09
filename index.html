@@ -36,6 +36,19 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:-20%;
+      pointer-events:none;
+      background:
+        radial-gradient(380px 380px at var(--mx, 50%) var(--my, 20%), rgba(255,255,255,.12), transparent 55%);
+      mix-blend-mode: screen;
+      opacity:.7;
+      transition: opacity .3s ease;
+      z-index:0;
+    }
+    .wrap{position:relative; z-index:1}
 
     a{color:inherit; text-decoration:none}
     .wrap{max-width:1100px; margin:0 auto; padding:24px 18px 72px}
@@ -246,6 +259,80 @@
       background: rgba(255,255,255,.05);
     }
     .sep{opacity:.5}
+
+    .reveal{
+      opacity:0;
+      transform: translateY(14px) scale(.99);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.is-visible{
+      opacity:1;
+      transform: translateY(0) scale(1);
+    }
+
+    .section-academics{
+      position:relative;
+      overflow:hidden;
+    }
+    .section-academics::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:
+        repeating-linear-gradient(90deg, rgba(6,182,212,.12), rgba(6,182,212,.12) 1px, transparent 1px, transparent 28px),
+        repeating-linear-gradient(0deg, rgba(124,58,237,.10), rgba(124,58,237,.10) 1px, transparent 1px, transparent 28px),
+        radial-gradient(500px 260px at 85% 10%, rgba(6,182,212,.18), transparent 60%),
+        radial-gradient(420px 220px at 15% 90%, rgba(124,58,237,.20), transparent 60%);
+      opacity:.55;
+      transform: translate3d(0,0,0);
+      animation: techGrid 18s linear infinite;
+      pointer-events:none;
+    }
+    .section-academics::after{
+      content:"";
+      position:absolute;
+      inset:12px;
+      border-radius: calc(var(--r) - 6px);
+      border:1px dashed rgba(6,182,212,.28);
+      opacity:.6;
+      pointer-events:none;
+      animation: dashPulse 3.6s ease-in-out infinite;
+    }
+
+    .section-music{
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(600px 320px at 10% 0%, rgba(249,115,22,.20), transparent 60%),
+        radial-gradient(500px 260px at 90% 30%, rgba(34,197,94,.18), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    }
+    .section-music::before{
+      content:"";
+      position:absolute;
+      inset:-30%;
+      background:
+        repeating-radial-gradient(circle at 20% 20%, rgba(249,115,22,.12), rgba(249,115,22,.12) 2px, transparent 2px, transparent 26px),
+        repeating-radial-gradient(circle at 80% 70%, rgba(34,197,94,.10), rgba(34,197,94,.10) 2px, transparent 2px, transparent 24px);
+      opacity:.5;
+      animation: tradBloom 14s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    @keyframes techGrid{
+      0%{transform: translate3d(0,0,0)}
+      50%{transform: translate3d(2%, -2%, 0)}
+      100%{transform: translate3d(0,0,0)}
+    }
+    @keyframes dashPulse{
+      0%,100%{opacity:.45}
+      50%{opacity:.85}
+    }
+    @keyframes tradBloom{
+      0%{transform: translate3d(0,0,0) scale(1)}
+      50%{transform: translate3d(-2%, 2%, 0) scale(1.02)}
+      100%{transform: translate3d(0,0,0) scale(1)}
+    }
   </style>
 </head>
 
@@ -314,7 +401,7 @@
     <div class="grid">
 
       <!-- ACADEMICS -->
-      <section id="academics" class="panel section">
+      <section id="academics" class="panel section section-academics">
         <h2>Academics</h2>
         <p class="lead">
           Currently pursuing a Ph.D. at ABV–Indian Institute of Information Technology and Management (ABV-IIITM), Gwalior. Previously served as a faculty member in the Department of Artificial Intelligence and Data Science at C. V. Raman Global University, Odisha.
@@ -466,7 +553,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
       </section>
 
       <!-- MUSIC -->
-      <section id="music" class="panel section">
+      <section id="music" class="panel section section-music">
         <h2>Music</h2>
         <p class="lead">
         </p>
@@ -607,6 +694,45 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
   <script>
     // footer year
     document.getElementById("y").textContent = new Date().getFullYear();
+
+    const revealTargets = document.querySelectorAll(".panel, .card, .social, .nav, .socials");
+    revealTargets.forEach((el) => el.classList.add("reveal"));
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    revealTargets.forEach((el) => revealObserver.observe(el));
+
+    const root = document.documentElement;
+    let targetX = 50;
+    let targetY = 20;
+    let currentX = 50;
+    let currentY = 20;
+
+    const updateGlow = () => {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      root.style.setProperty("--mx", `${currentX}%`);
+      root.style.setProperty("--my", `${currentY}%`);
+      requestAnimationFrame(updateGlow);
+    };
+
+    updateGlow();
+
+    window.addEventListener("pointermove", (event) => {
+      const { innerWidth, innerHeight } = window;
+      targetX = Math.round((event.clientX / innerWidth) * 100);
+      targetY = Math.round((event.clientY / innerHeight) * 100);
+    });
   </script>
 </body>
 </html>
