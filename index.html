@@ -175,6 +175,46 @@
     .section h2{margin:0 0 10px; font-size:22px}
     .section .lead{margin:0 0 14px; color:var(--muted); line-height:1.7}
 
+    .section-tech{
+      background:
+        linear-gradient(135deg, rgba(6,182,212,.15), rgba(124,58,237,.18)),
+        repeating-linear-gradient(0deg, rgba(255,255,255,.05), rgba(255,255,255,.05) 1px, transparent 1px, transparent 6px);
+      border-color: rgba(6,182,212,.35);
+    }
+    .section-tech h2{
+      letter-spacing:.6px;
+      text-transform: uppercase;
+    }
+    .section-tech .card{
+      background: rgba(8,13,32,.65);
+      border-color: rgba(124,58,237,.35);
+      box-shadow: inset 0 0 0 1px rgba(6,182,212,.1);
+    }
+    .section-tech .tag{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      border-color: rgba(6,182,212,.35);
+      color: rgba(226,246,255,.95);
+    }
+
+    .section-trad{
+      background:
+        linear-gradient(135deg, rgba(249,115,22,.18), rgba(255,199,0,.18)),
+        radial-gradient(600px 300px at 10% 0%, rgba(255,255,255,.08), transparent 60%);
+      border-color: rgba(249,115,22,.35);
+    }
+    .section-trad h2{
+      font-family: "Times New Roman", Georgia, serif;
+      letter-spacing:.4px;
+    }
+    .section-trad .card{
+      background: rgba(34,22,8,.45);
+      border-color: rgba(249,115,22,.35);
+    }
+    .section-trad .tag{
+      border-color: rgba(249,115,22,.35);
+      color: rgba(255,240,220,.92);
+    }
+
     .cards{display:grid; grid-template-columns:1fr; gap:12px}
     .card{
       padding:14px;
@@ -337,7 +377,7 @@
     <div class="grid">
 
       <!-- ACADEMICS -->
-      <section id="academics" class="panel section">
+      <section id="academics" class="panel section section-tech">
         <h2>Academics</h2>
         <p class="lead">
           Currently pursuing a Ph.D. at ABV–Indian Institute of Information Technology and Management (ABV-IIITM), Gwalior. Previously served as a faculty member in the Department of Artificial Intelligence and Data Science at C. V. Raman Global University, Odisha.
@@ -489,7 +529,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
       </section>
 
       <!-- MUSIC -->
-      <section id="music" class="panel section">
+      <section id="music" class="panel section section-trad">
         <h2>Music</h2>
         <p class="lead">
         </p>
