@@ -236,6 +236,93 @@
       color: rgba(238,242,255,.88);
     }
 
+    /* Blog section */
+    .section-blog{
+      background:
+        linear-gradient(135deg, rgba(124,58,237,.18), rgba(6,182,212,.15)),
+        radial-gradient(700px 350px at 80% 0%, rgba(124,58,237,.12), transparent 60%);
+      border-color: rgba(124,58,237,.35);
+    }
+    .section-blog h2{
+      letter-spacing:.3px;
+    }
+    .section-blog .card{
+      background: rgba(12,8,32,.55);
+      border-color: rgba(124,58,237,.30);
+      box-shadow: inset 0 0 0 1px rgba(6,182,212,.08);
+    }
+    .section-blog .tag{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      border-color: rgba(124,58,237,.35);
+      color: rgba(226,232,255,.92);
+    }
+
+    .blog-card{
+      display:grid;
+      grid-template-columns: auto 1fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 520px){ .blog-card{grid-template-columns:1fr} }
+
+    .blog-icon{
+      width:52px; height:52px; border-radius:14px;
+      display:grid; place-items:center;
+      font-size:22px;
+      box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+      flex-shrink:0;
+    }
+    .blog-icon.transformer{
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    }
+    .blog-meta{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      margin-top:4px; margin-bottom:6px;
+    }
+    .blog-date{
+      font-size:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--muted);
+    }
+    .blog-category{
+      font-size:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(124,58,237,.25);
+      border:1px solid rgba(124,58,237,.40);
+      color: rgba(210,200,255,.95);
+    }
+    .blog-content h3{margin:0 0 2px; font-size:17px;}
+    .blog-content p{margin:0; color:var(--muted); font-size:14px; line-height:1.65}
+    .blog-read{
+      display:inline-flex; align-items:center; gap:8px;
+      margin-top:12px;
+      padding:9px 16px;
+      border-radius:10px;
+      border:1px solid rgba(124,58,237,.45);
+      background: linear-gradient(135deg, rgba(124,58,237,.20), rgba(6,182,212,.15));
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+      transition: transform .15s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .blog-read:hover{
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, rgba(124,58,237,.35), rgba(6,182,212,.25));
+      border-color: rgba(124,58,237,.60);
+      box-shadow: 0 8px 24px rgba(124,58,237,.18);
+    }
+    .blog-read svg{
+      width:14px; height:14px;
+      transition: transform .15s ease;
+    }
+    .blog-read:hover svg{
+      transform: translateX(3px);
+    }
+
     /* Socials */
     .socials{
       margin-top:18px;
@@ -324,6 +411,7 @@
       <div class="links">
         <a class="chip" href="#academics">Academics</a>
         <a class="chip" href="#music">Music</a>
+        <a class="chip" href="#blog">Blog</a>
         <a class="chip" href="#socials">Socials</a>
       </div>
     </div>
@@ -416,7 +504,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
   <ol style="margin:0; padding-left:18px; line-height:1.7; color:var(--muted);">
     <li style="margin:10px 0;">
       <b style="color:var(--text);">A. Mishra</b>, A. S. Yadav, V. Goswami, A. Vidyarthi, M. Nayak, and R. K. Barik,
-      “A Mobility-Aware IoT-Fog-Blockchain Framework with Queuing and Game-Theoretic Trust,”
+      "A Mobility-Aware IoT-Fog-Blockchain Framework with Queuing and Game-Theoretic Trust,"
       <i style="color:rgba(238,242,255,.85);">2nd International Conference on Circuits, Power and Intelligent Systems (CCPIS)</i>, IEEE, 2025.
       <div style="margin-top:6px;">
         <a class="chip" href="https://doi.org/10.1109/CCPIS65231.2025.11234238" target="_blank" rel="noreferrer">DOI:10.1109/CCPIS65231.2025.112342381</a>
@@ -427,7 +515,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
 
     <li style="margin:10px 0;">
       <b style="color:var(--text);">A. Mishra</b>, M. Kandpal, S. Mohapatra, N. Nisha, M. Nayak, and R. K. Barik,
-      “A Multi-Dimensional Comparative Study of Popular Blockchain Consensus Protocols for Scalable Networks,”
+      "A Multi-Dimensional Comparative Study of Popular Blockchain Consensus Protocols for Scalable Networks,"
       <i style="color:rgba(238,242,255,.85);">2nd International Conference on Circuits, Power and Intelligent Systems (CCPIS)</i>, IEEE, 2025.
       <div style="margin-top:6px;">
         <a class="chip" href="https://doi.org/10.1109/CCPIS65231.2025.11234055" target="_blank" rel="noreferrer">DOI: 10.1109/CCPIS65231.2025.11234055</a>
@@ -438,7 +526,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
 
     <li style="margin:10px 0;">
       Mishra, Goswami, Priyadarshini, Kandpal, Mund, and Barik,
-      “Dynamic allocations of dew nodes for IoST-Dew-Fog–Cloud system using a Single-Server queueing model with Dropping Function,”
+      "Dynamic allocations of dew nodes for IoST-Dew-Fog–Cloud system using a Single-Server queueing model with Dropping Function,"
       <i style="color:rgba(238,242,255,.85);">22nd OITS International Conference on Information Technology</i>, IEEE, 2024.
       <div style="margin-top:6px;">
         <a class="chip" href="https://doi.org/10.1109/OCIT65031.2024.00139" target="_blank" rel="noreferrer">DOI: 10.1109/OCIT65031.2024.00139</a>
@@ -449,7 +537,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
 
     <li style="margin:10px 0;">
       Mishra, Nayak, Priyadarshini, Mohanty, Yadav, and Barik,
-      “Blockchain-Assisted Federated Learning Framework for data processing in IoMT domain,”
+      "Blockchain-Assisted Federated Learning Framework for data processing in IoMT domain,"
       <i style="color:rgba(238,242,255,.85);">IEEE International Conference on Applied Electromagnetics, Signal Processing and Communications</i>, IEEE, 2024.
       <div style="margin-top:6px;">
         <a class="chip" href="https://doi.org/10.1109/AESPC63931.2024.10872355" target="_blank" rel="noreferrer">DOI : 10.1109/AESPC63931.2024.10872355 </a>
@@ -460,7 +548,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
 
     <li style="margin:10px 0;">
       Mohapatra, <b style="color:var(--text);">Mishra</b>, and Mohanty,
-      “Next-Gen Healthcare: Blockchain-Fuelled Federated Learning for IoMT Security,”
+      "Next-Gen Healthcare: Blockchain-Fuelled Federated Learning for IoMT Security,"
       <i style="color:rgba(238,242,255,.85);">IEEE International Conference on Artificial Intelligence and Signal Processing</i>, IEEE, 2024.
       <div style="margin-top:6px;">
         <a class="chip" href="https://doi.org/10.1109/AISP61711.2024.10870602" target="_blank" rel="noreferrer">DOI : 10.1109/AISP61711.2024.10870602</a>
@@ -480,7 +568,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
   <ul style="margin:0; padding-left:18px; line-height:1.7; color:var(--muted);">
     <li style="margin:10px 0;">
       Mohapatra, <b style="color:var(--text);">Mishra</b>, and Mohanty,
-      “Emerging Horizons: Exploring Blockchain-driven Hyper-Intelligent Network in Healthcare,”
+      "Emerging Horizons: Exploring Blockchain-driven Hyper-Intelligent Network in Healthcare,"
       in <i style="color:rgba(238,242,255,.85);">Hyper Intelligent Networks: Exploring the Future of Connectivity for Society 5.0</i>.
       <span style="opacity:.9;"></span>
       <div style="margin-top:6px;">
@@ -499,7 +587,7 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
 
   <ul style="margin:0; padding-left:18px; line-height:1.7; color:var(--muted);">
     <li style="margin:10px 0;">
-      <b style="color:var(--text);">Indian Design Patent</b> — “AI Enabled Soil Loosening Device” (ID: 427300-001).
+      <b style="color:var(--text);">Indian Design Patent</b> — "AI Enabled Soil Loosening Device" (ID: 427300-001).
       <div style="margin-top:6px;">
         <!-- <a class="chip" href="#" target="_blank" rel="noreferrer">Patent Link</a> -->
       </div>
@@ -615,6 +703,72 @@ Completed M.Tech from Odisha University of Technology and Research (OUTR), Odish
       </section>
 
     </div>
+
+    <!-- ========= BLOG POSTS SECTION ========= -->
+    <section id="blog" class="panel section section-blog" style="margin-top:18px;">
+      <h2>📝 Blog Posts</h2>
+      <p class="lead">
+        Deep-dive technical write-ups on topics I find fascinating — from foundational ML architectures to software engineering concepts.
+      </p>
+
+      <div class="cards">
+
+        <!-- Blog Post 1: Transformer End-to-End -->
+        <a href="transformer_end_to_end.html" class="card" style="text-decoration:none;">
+          <div class="blog-card">
+            <div class="blog-icon transformer">🧠</div>
+            <div class="blog-content">
+              <div class="blog-meta">
+                <span class="blog-date">Feb 2026</span>
+                <span class="blog-category">Deep Learning</span>
+              </div>
+              <h3>End-to-End Transformer: Complete Mathematical Walkthrough</h3>
+              <p>
+                A fully worked numerical example tracing a sentence through every stage of the Transformer architecture — sinusoidal positional encoding, multi-head self-attention with actual weight matrices, masked decoder attention, cross-attention, feed-forward networks, cross-entropy loss with label smoothing, backpropagation gradients, and Adam optimizer updates. Every matrix multiplication computed by hand.
+              </p>
+              <div class="tags" style="margin-top:10px; margin-bottom:4px;">
+                <span class="tag">Attention Is All You Need</span>
+                <span class="tag">Self-Attention</span>
+                <span class="tag">Positional Encoding</span>
+                <span class="tag">Backpropagation</span>
+                <span class="tag">Adam Optimizer</span>
+              </div>
+              <div class="blog-read">
+                Read Full Post
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Placeholder for future posts — you can copy the block above and change content -->
+        <!--
+        <a href="another_post.html" class="card" style="text-decoration:none;">
+          <div class="blog-card">
+            <div class="blog-icon" style="background: linear-gradient(135deg, var(--accent3), var(--accent4));">📊</div>
+            <div class="blog-content">
+              <div class="blog-meta">
+                <span class="blog-date">Mar 2026</span>
+                <span class="blog-category">Software Engineering</span>
+              </div>
+              <h3>Your Next Post Title</h3>
+              <p>Description here.</p>
+              <div class="blog-read">
+                Read Full Post
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </a>
+        -->
+
+      </div>
+    </section>
+    <!-- ========= /BLOG POSTS SECTION ========= -->
 
     <!-- SOCIALS -->
     <section id="socials" class="socials">
