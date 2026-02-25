@@ -4,1245 +4,1378 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>End-to-End Transformer: Complete Mathematical Walkthrough</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1c2333;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-dim: #8b949e;
-    --accent: #58a6ff;
-    --accent2: #f0883e;
-    --accent3: #7ee787;
-    --accent4: #d2a8ff;
-    --accent5: #ff7b72;
-    --accent6: #79c0ff;
+    --bg0: #0b1020;
+    --bg1: #101a3a;
+    --card: rgba(255,255,255,.08);
+    --card2: rgba(255,255,255,.10);
+    --text: #eef2ff;
+    --muted: rgba(238,242,255,.75);
+    --line: rgba(255,255,255,.14);
+    --shadow: 0 20px 60px rgba(0,0,0,.40);
+    --r: 18px;
+    --accent1: #7c3aed;
+    --accent2: #06b6d4;
+    --accent3: #f97316;
+    --accent4: #22c55e;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,.35), transparent 55%),
+      radial-gradient(1200px 800px at 80% 20%, rgba(6,182,212,.28), transparent 55%),
+      radial-gradient(900px 700px at 60% 80%, rgba(249,115,22,.22), transparent 55%),
+      linear-gradient(180deg, var(--bg0), var(--bg1));
+    background-attachment: fixed;
     color: var(--text);
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 17px;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
+    font-size: 16px;
     line-height: 1.75;
-    padding: 0;
+    overflow-x: hidden;
   }
 
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -20%;
+    pointer-events: none;
+    background: radial-gradient(380px 380px at var(--mx,50%) var(--my,20%), rgba(255,255,255,.12), transparent 55%);
+    mix-blend-mode: screen;
+    opacity: .7;
+    z-index: 0;
+  }
+
+  .page-wrap { position: relative; z-index: 1; }
+
+  /* ---- Back Button ---- */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,.06);
+    backdrop-filter: blur(10px);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    position: sticky;
+    top: 18px;
+    z-index: 10;
+    margin: 18px 0 0 18px;
+    width: fit-content;
+  }
+  .back-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.10);
+    border-color: rgba(255,255,255,.22);
+  }
+  .back-btn svg { width: 16px; height: 16px; }
+
+  /* ---- Hero ---- */
   .hero {
-    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1e2e 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 80px 40px 60px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 24px 40px;
     text-align: center;
     position: relative;
-    overflow: hidden;
   }
-
-  .hero::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(ellipse at 30% 50%, rgba(88,166,255,0.08) 0%, transparent 60%),
-                radial-gradient(ellipse at 70% 30%, rgba(210,168,255,0.06) 0%, transparent 50%);
-    pointer-events: none;
-  }
-
-  .hero h1 {
-    font-family: 'Crimson Pro', serif;
-    font-size: 3rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
+  .hero-badge {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.16);
+    background: rgba(255,255,255,.06);
+    font-size: 13px;
+    color: var(--muted);
     margin-bottom: 16px;
-    position: relative;
   }
-
+  .hero-badge .spark {
+    width: 10px; height: 10px; border-radius: 3px;
+    background: linear-gradient(135deg, var(--accent3), var(--accent2));
+    transform: rotate(18deg);
+    box-shadow: 0 0 0 4px rgba(255,255,255,.06);
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--text) 0%, rgba(124,58,237,.85) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
   .hero .subtitle {
-    font-size: 1.1rem;
-    color: var(--text-dim);
-    font-weight: 300;
-    position: relative;
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 58ch;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+  .hero .ref {
+    margin-top: 10px;
+    font-size: .85rem;
+    color: rgba(238,242,255,.45);
   }
 
+  /* ---- Container ---- */
   .container {
     max-width: 920px;
     margin: 0 auto;
-    padding: 40px 32px 100px;
+    padding: 10px 24px 100px;
   }
 
+  /* ---- Panel (glass card) ---- */
+  .panel {
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+    border-radius: var(--r);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+  .panel::before {
+    content: "";
+    position: absolute; inset: -2px;
+    background:
+      radial-gradient(600px 300px at 20% 0%, rgba(124,58,237,.25), transparent 60%),
+      radial-gradient(500px 250px at 90% 20%, rgba(6,182,212,.18), transparent 60%);
+    pointer-events: none;
+  }
+  .panel > * { position: relative; }
+
+  /* ---- TOC ---- */
+  .toc {
+    padding: 24px 28px;
+    margin: 24px 0;
+  }
+  .toc h3 {
+    margin: 0 0 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: .2px;
+  }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 5px 0; font-size: .92rem; }
+  .toc a {
+    color: var(--accent2);
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .toc a:hover { color: var(--text); text-decoration: underline; }
+
+  /* ---- Section Headings ---- */
   h2 {
-    font-family: 'Crimson Pro', serif;
-    font-size: 2rem;
-    font-weight: 600;
-    margin: 60px 0 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid var(--border);
-    color: var(--accent);
+    font-size: 1.7rem;
+    font-weight: 800;
+    margin: 56px 0 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--line);
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   h3 {
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin: 36px 0 16px;
-    color: var(--accent4);
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 32px 0 14px;
+    color: var(--accent2);
   }
 
   h4 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 24px 0 12px;
-    color: var(--accent3);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 22px 0 10px;
+    color: var(--accent4);
   }
 
-  p { margin-bottom: 16px; }
+  p { margin-bottom: 14px; color: var(--muted); }
+  p strong, p b { color: var(--text); }
 
+  /* ---- Math Blocks ---- */
   .math-block {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 20px 24px;
-    margin: 20px 0;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent1);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 18px 0;
     overflow-x: auto;
     text-align: center;
-    font-size: 1.05em;
   }
-
   .math-block.highlight {
-    border-left-color: var(--accent2);
-    background: rgba(240,136,62,0.04);
-  }
-
-  .math-block.result {
     border-left-color: var(--accent3);
-    background: rgba(126,231,135,0.04);
+    background: rgba(249,115,22,.05);
+  }
+  .math-block.result {
+    border-left-color: var(--accent4);
+    background: rgba(34,197,94,.05);
   }
 
+  /* ---- Matrix Containers ---- */
   .matrix-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 20px;
-    margin: 20px 0;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin: 18px 0;
     overflow-x: auto;
   }
-
   .matrix-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
-    color: var(--accent2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .82rem;
+    color: var(--accent3);
     margin-bottom: 8px;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   table.matrix {
     border-collapse: collapse;
     margin: 8px auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .8rem;
   }
-
   table.matrix td {
     padding: 6px 10px;
     text-align: right;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255,255,255,.10);
     color: var(--text);
     white-space: nowrap;
   }
-
   table.matrix thead td {
-    background: var(--surface2);
-    color: var(--accent6);
-    font-weight: 500;
-    font-size: 0.78rem;
+    background: rgba(124,58,237,.15);
+    color: var(--accent2);
+    font-weight: 600;
+    font-size: .76rem;
   }
 
+  /* ---- Step Boxes ---- */
   .step-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px;
-    margin: 24px 0;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 26px 22px 20px;
+    margin: 22px 0;
     position: relative;
   }
-
   .step-box::before {
     content: attr(data-step);
     position: absolute;
     top: -12px;
-    left: 20px;
-    background: var(--accent);
-    color: var(--bg);
-    padding: 2px 12px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    font-family: 'JetBrains Mono', monospace;
+    left: 18px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    color: #fff;
+    padding: 3px 14px;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    box-shadow: 0 4px 12px rgba(124,58,237,.25);
   }
 
+  /* ---- Notes ---- */
   .note {
-    background: rgba(88,166,255,0.06);
-    border-left: 3px solid var(--accent);
-    padding: 14px 18px;
-    margin: 16px 0;
-    border-radius: 0 6px 6px 0;
-    font-size: 0.95rem;
-  }
-
-  .warn {
-    background: rgba(240,136,62,0.06);
+    background: rgba(6,182,212,.06);
     border-left: 3px solid var(--accent2);
     padding: 14px 18px;
     margin: 16px 0;
-    border-radius: 0 6px 6px 0;
-    font-size: 0.95rem;
+    border-radius: 0 14px 14px 0;
+    font-size: .93rem;
+  }
+  .warn {
+    background: rgba(249,115,22,.06);
+    border-left: 3px solid var(--accent3);
+    padding: 14px 18px;
+    margin: 16px 0;
+    border-radius: 0 14px 14px 0;
+    font-size: .93rem;
   }
 
   code {
-    font-family: 'JetBrains Mono', monospace;
-    background: var(--surface);
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 0.88em;
-    color: var(--accent3);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: rgba(255,255,255,.08);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: .86em;
+    color: var(--accent4);
+    border: 1px solid rgba(255,255,255,.08);
   }
 
-  .toc {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 24px 30px;
-    margin: 30px 0;
-  }
-
-  .toc h3 { margin-top: 0; color: var(--text); font-size: 1.15rem; }
-
-  .toc ol {
-    padding-left: 20px;
-    counter-reset: toc-counter;
-  }
-
-  .toc li {
-    margin: 6px 0;
-    color: var(--accent6);
-    font-size: 0.95rem;
-  }
-
-  .toc a {
-    color: var(--accent6);
-    text-decoration: none;
-  }
-  .toc a:hover { text-decoration: underline; }
-
-  .dim { color: var(--text-dim); }
-  .acc { color: var(--accent); }
-  .acc2 { color: var(--accent2); }
-  .acc3 { color: var(--accent3); }
-  .acc4 { color: var(--accent4); }
-  .acc5 { color: var(--accent5); }
-
-  .katex { font-size: 1.05em; }
-  .katex-display { margin: 12px 0; }
-
+  /* ---- Pipeline ---- */
   .pipe {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     margin: 20px 0;
     flex-wrap: wrap;
   }
   .pipe .arrow {
-    color: var(--accent2);
-    font-size: 1.4rem;
+    color: var(--accent3);
+    font-size: 1.3rem;
   }
   .pipe .block {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85rem;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--line);
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: .82rem;
     text-align: center;
   }
 
   hr {
     border: none;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--line);
     margin: 40px 0;
   }
 
+  /* ---- Color helpers ---- */
+  .acc1 { color: var(--accent1); }
+  .acc2 { color: var(--accent2); }
+  .acc3 { color: var(--accent3); }
+  .acc4 { color: var(--accent4); }
+  .dim  { color: var(--muted); }
+
+  .katex { font-size: 1.02em; }
+  .katex-display { margin: 10px 0; }
+
+  /* ---- Tags (reuse portfolio style) ---- */
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .tag {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(124,58,237,.35);
+    background: rgba(124,58,237,.12);
+    color: rgba(226,232,255,.92);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  /* ---- Responsive ---- */
   @media (max-width: 700px) {
-    .hero { padding: 50px 20px 40px; }
-    .hero h1 { font-size: 2rem; }
-    .container { padding: 24px 16px 60px; }
-    h2 { font-size: 1.6rem; }
-    table.matrix { font-size: 0.72rem; }
-    table.matrix td { padding: 4px 6px; }
+    .hero { padding: 40px 16px 30px; }
+    .hero h1 { font-size: 1.8rem; }
+    .container { padding: 10px 14px 60px; }
+    h2 { font-size: 1.4rem; }
+    table.matrix { font-size: .7rem; }
+    table.matrix td { padding: 4px 5px; }
+    .step-box { padding: 22px 14px 16px; }
+  }
+
+  /* ---- Reveal animation ---- */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px) scale(.99);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 </style>
 </head>
 <body>
-
-<div class="hero">
-  <h1>End-to-End Transformer</h1>
-  <p class="subtitle">A Complete Numerical Walkthrough — from Raw Sentence to Weight Update</p>
-  <p class="subtitle dim" style="margin-top:8px;font-size:0.9rem;">Based on Vaswani et al., "Attention Is All You Need" (NeurIPS 2017)</p>
-</div>
-
-<div class="container">
-
-<!-- ======================== TOC ======================== -->
-<div class="toc">
-  <h3>Contents</h3>
-  <ol>
-    <li><a href="#s1">Problem Setup & Hyperparameters</a></li>
-    <li><a href="#s2">Tokenization & Token Embedding</a></li>
-    <li><a href="#s3">Sinusoidal Positional Encoding</a></li>
-    <li><a href="#s4">Encoder: Multi-Head Self-Attention</a></li>
-    <li><a href="#s5">Encoder: Add & Norm + Feed-Forward Network</a></li>
-    <li><a href="#s6">Decoder: Masked Multi-Head Self-Attention</a></li>
-    <li><a href="#s7">Decoder: Encoder–Decoder Cross-Attention</a></li>
-    <li><a href="#s8">Decoder: Feed-Forward + Linear + Softmax</a></li>
-    <li><a href="#s9">Loss Computation (Cross-Entropy)</a></li>
-    <li><a href="#s10">Backpropagation & Weight Update (Adam)</a></li>
-    <li><a href="#s11">Learning Rate Schedule</a></li>
-    <li><a href="#s12">Summary of the Full Pipeline</a></li>
-  </ol>
-</div>
-
-<!-- ======================== SECTION 1 ======================== -->
-<h2 id="s1">1. Problem Setup & Hyperparameters</h2>
-
-<p>We will translate a toy English sentence to French:</p>
-
-<div class="math-block">
-  $$\text{Source: } x = [\texttt{I}, \texttt{love}, \texttt{AI}] \qquad \text{Target: } y = [\texttt{J'}, \texttt{aime}, \texttt{l'IA}]$$
-</div>
-
-<p>To keep every computation tractable by hand, we use a <strong>miniaturized</strong> Transformer:</p>
-
-<div class="matrix-container">
-<table class="matrix" style="width:auto;">
-  <thead><td>Hyperparameter</td><td>Paper Value</td><td>Our Toy Value</td></thead>
-  <tr><td>$d_{\text{model}}$</td><td>512</td><td><strong>4</strong></td></tr>
-  <tr><td>$h$ (number of heads)</td><td>8</td><td><strong>2</strong></td></tr>
-  <tr><td>$d_k = d_v = d_{\text{model}} / h$</td><td>64</td><td><strong>2</strong></td></tr>
-  <tr><td>$d_{ff}$</td><td>2048</td><td><strong>6</strong></td></tr>
-  <tr><td>Sequence length $n$</td><td>variable</td><td><strong>3</strong></td></tr>
-  <tr><td>Vocab size $|V|$</td><td>~37k (BPE)</td><td><strong>6</strong></td></tr>
-  <tr><td>Number of layers $N$</td><td>6</td><td><strong>1</strong></td></tr>
-</table>
-</div>
-
-<p>Our vocabulary (shared for simplicity): <code>V = {I, love, AI, J', aime, l'IA}</code>, indexed 0–5.</p>
-
-
-<!-- ======================== SECTION 2 ======================== -->
-<h2 id="s2">2. Tokenization & Token Embedding</h2>
-
-<p>Each token is mapped to a learnable vector $\mathbf{e}_i \in \mathbb{R}^{d_{\text{model}}}$. The embedding matrix $W_{\text{emb}} \in \mathbb{R}^{|V| \times d_{\text{model}}}$ is a parameter of the model. We initialize it (randomly) as:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$W_{\text{emb}} \in \mathbb{R}^{6 \times 4}$ (each row = one token's embedding)</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>I (0)</td><td>0.10</td><td>0.20</td><td>0.30</td><td>0.40</td></tr>
-    <tr><td>love (1)</td><td>0.50</td><td>0.60</td><td>0.10</td><td>0.20</td></tr>
-    <tr><td>AI (2)</td><td>0.30</td><td>0.40</td><td>0.50</td><td>0.60</td></tr>
-    <tr><td>J' (3)</td><td>0.20</td><td>0.30</td><td>0.40</td><td>0.10</td></tr>
-    <tr><td>aime (4)</td><td>0.60</td><td>0.10</td><td>0.20</td><td>0.50</td></tr>
-    <tr><td>l'IA (5)</td><td>0.40</td><td>0.50</td><td>0.60</td><td>0.30</td></tr>
-  </table>
-</div>
-
-<p>As prescribed by the paper, embeddings are scaled by $\sqrt{d_{\text{model}}} = \sqrt{4} = 2$:</p>
-
-<div class="math-block">
-  $$\tilde{\mathbf{e}}_i = \sqrt{d_{\text{model}}} \cdot \mathbf{e}_i$$
-</div>
-
-<p>For the source sentence $[\texttt{I}, \texttt{love}, \texttt{AI}]$:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$E_{\text{src}} \in \mathbb{R}^{3 \times 4}$ (scaled token embeddings)</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>I</td><td>0.20</td><td>0.40</td><td>0.60</td><td>0.80</td></tr>
-    <tr><td>love</td><td>1.00</td><td>1.20</td><td>0.20</td><td>0.40</td></tr>
-    <tr><td>AI</td><td>0.60</td><td>0.80</td><td>1.00</td><td>1.20</td></tr>
-  </table>
-</div>
-
-
-<!-- ======================== SECTION 3 ======================== -->
-<h2 id="s3">3. Sinusoidal Positional Encoding</h2>
-
-<p>Since the Transformer has no recurrence, we inject position information via fixed sinusoidal functions. For position $\text{pos}$ and dimension $i$:</p>
-
-<div class="math-block highlight">
-  $$PE_{(\text{pos}, 2i)} = \sin\!\left(\frac{\text{pos}}{10000^{2i/d_{\text{model}}}}\right) \qquad PE_{(\text{pos}, 2i+1)} = \cos\!\left(\frac{\text{pos}}{10000^{2i/d_{\text{model}}}}\right)$$
-</div>
-
-<p>With $d_{\text{model}} = 4$, the dimension indices are $i \in \{0, 1\}$, giving wavelengths:</p>
-
-<div class="math-block">
-  $$\omega_0 = \frac{1}{10000^{0/4}} = \frac{1}{1} = 1 \qquad \omega_1 = \frac{1}{10000^{2/4}} = \frac{1}{100}  = 0.01$$
-</div>
-
-<h4>Computing each entry:</h4>
-
-<div class="step-box" data-step="pos=0">
-  $$PE_{(0,0)} = \sin(0 \cdot 1) = \sin(0) = 0.0000$$
-  $$PE_{(0,1)} = \cos(0 \cdot 1) = \cos(0) = 1.0000$$
-  $$PE_{(0,2)} = \sin(0 \cdot 0.01) = \sin(0) = 0.0000$$
-  $$PE_{(0,3)} = \cos(0 \cdot 0.01) = \cos(0) = 1.0000$$
-</div>
-
-<div class="step-box" data-step="pos=1">
-  $$PE_{(1,0)} = \sin(1 \cdot 1) = \sin(1) = 0.8415$$
-  $$PE_{(1,1)} = \cos(1 \cdot 1) = \cos(1) = 0.5403$$
-  $$PE_{(1,2)} = \sin(1 \cdot 0.01) = \sin(0.01) = 0.0100$$
-  $$PE_{(1,3)} = \cos(1 \cdot 0.01) = \cos(0.01) = 0.9999$$
-</div>
-
-<div class="step-box" data-step="pos=2">
-  $$PE_{(2,0)} = \sin(2 \cdot 1) = \sin(2) = 0.9093$$
-  $$PE_{(2,1)} = \cos(2 \cdot 1) = \cos(2) = -0.4161$$
-  $$PE_{(2,2)} = \sin(2 \cdot 0.01) = \sin(0.02) = 0.0200$$
-  $$PE_{(2,3)} = \cos(2 \cdot 0.01) = \cos(0.02) = 0.9998$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$PE \in \mathbb{R}^{3 \times 4}$ — Positional Encoding Matrix</div>
-  <table class="matrix">
-    <thead><td>pos</td><td>$d_0$ (sin)</td><td>$d_1$ (cos)</td><td>$d_2$ (sin)</td><td>$d_3$ (cos)</td></thead>
-    <tr><td>0</td><td>0.0000</td><td>1.0000</td><td>0.0000</td><td>1.0000</td></tr>
-    <tr><td>1</td><td>0.8415</td><td>0.5403</td><td>0.0100</td><td>0.9999</td></tr>
-    <tr><td>2</td><td>0.9093</td><td>-0.4161</td><td>0.0200</td><td>0.9998</td></tr>
-  </table>
-</div>
-
-<h4>Encoder Input: $X = E_{\text{src}} + PE$</h4>
-
-<div class="math-block result">
-  $$X = \begin{pmatrix} 0.20 & 0.40 & 0.60 & 0.80 \\ 1.00 & 1.20 & 0.20 & 0.40 \\ 0.60 & 0.80 & 1.00 & 1.20 \end{pmatrix} + \begin{pmatrix} 0.00 & 1.00 & 0.00 & 1.00 \\ 0.84 & 0.54 & 0.01 & 1.00 \\ 0.91 & -0.42 & 0.02 & 1.00 \end{pmatrix}$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$X \in \mathbb{R}^{3 \times 4}$ — Encoder Input</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$x_0$</td><td>0.2000</td><td>1.4000</td><td>0.6000</td><td>1.8000</td></tr>
-    <tr><td>$x_1$</td><td>1.8415</td><td>1.7403</td><td>0.2100</td><td>1.3999</td></tr>
-    <tr><td>$x_2$</td><td>1.5093</td><td>0.3839</td><td>1.0200</td><td>2.1998</td></tr>
-  </table>
-</div>
-
-<!-- ======================== SECTION 4 ======================== -->
-<h2 id="s4">4. Encoder: Multi-Head Self-Attention</h2>
-
-<p>The core mechanism. We have $h=2$ heads, each operating on $d_k = d_v = d_{\text{model}} / h = 2$ dimensions. For each head $j$, we learn projection matrices:</p>
-
-<div class="math-block">
-  $$W^Q_j, W^K_j \in \mathbb{R}^{d_{\text{model}} \times d_k} = \mathbb{R}^{4 \times 2}, \qquad W^V_j \in \mathbb{R}^{d_{\text{model}} \times d_v} = \mathbb{R}^{4 \times 2}$$
-</div>
-
-<p>And the output projection: $W^O \in \mathbb{R}^{h \cdot d_v \times d_{\text{model}}} = \mathbb{R}^{4 \times 4}$.</p>
-
-<h3>4.1 Weight Initialization (Randomly chosen)</h3>
-
-<div class="matrix-container">
-  <div class="matrix-label">Head 1 weights:</div>
-  <table class="matrix" style="display:inline-table; margin-right:20px;">
-    <thead><td colspan="3">$W^{Q}_1$</td></thead>
-    <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.1</td><td>0.3</td></tr>
-    <tr><td>$d_1$</td><td>0.2</td><td>0.4</td></tr>
-    <tr><td>$d_2$</td><td>0.5</td><td>0.1</td></tr>
-    <tr><td>$d_3$</td><td>0.3</td><td>0.2</td></tr>
-  </table>
-  <table class="matrix" style="display:inline-table; margin-right:20px;">
-    <thead><td colspan="3">$W^{K}_1$</td></thead>
-    <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.2</td><td>0.1</td></tr>
-    <tr><td>$d_1$</td><td>0.3</td><td>0.4</td></tr>
-    <tr><td>$d_2$</td><td>0.1</td><td>0.2</td></tr>
-    <tr><td>$d_3$</td><td>0.4</td><td>0.3</td></tr>
-  </table>
-  <table class="matrix" style="display:inline-table;">
-    <thead><td colspan="3">$W^{V}_1$</td></thead>
-    <tr><td></td><td>$v_0$</td><td>$v_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.3</td><td>0.2</td></tr>
-    <tr><td>$d_1$</td><td>0.1</td><td>0.4</td></tr>
-    <tr><td>$d_2$</td><td>0.4</td><td>0.1</td></tr>
-    <tr><td>$d_3$</td><td>0.2</td><td>0.3</td></tr>
-  </table>
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">Head 2 weights:</div>
-  <table class="matrix" style="display:inline-table; margin-right:20px;">
-    <thead><td colspan="3">$W^{Q}_2$</td></thead>
-    <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.4</td><td>0.2</td></tr>
-    <tr><td>$d_1$</td><td>0.1</td><td>0.3</td></tr>
-    <tr><td>$d_2$</td><td>0.3</td><td>0.5</td></tr>
-    <tr><td>$d_3$</td><td>0.2</td><td>0.1</td></tr>
-  </table>
-  <table class="matrix" style="display:inline-table; margin-right:20px;">
-    <thead><td colspan="3">$W^{K}_2$</td></thead>
-    <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.1</td><td>0.3</td></tr>
-    <tr><td>$d_1$</td><td>0.4</td><td>0.2</td></tr>
-    <tr><td>$d_2$</td><td>0.2</td><td>0.1</td></tr>
-    <tr><td>$d_3$</td><td>0.3</td><td>0.4</td></tr>
-  </table>
-  <table class="matrix" style="display:inline-table;">
-    <thead><td colspan="3">$W^{V}_2$</td></thead>
-    <tr><td></td><td>$v_0$</td><td>$v_1$</td></tr>
-    <tr><td>$d_0$</td><td>0.2</td><td>0.3</td></tr>
-    <tr><td>$d_1$</td><td>0.4</td><td>0.1</td></tr>
-    <tr><td>$d_2$</td><td>0.1</td><td>0.5</td></tr>
-    <tr><td>$d_3$</td><td>0.3</td><td>0.2</td></tr>
-  </table>
-</div>
-
-<h3>4.2 Computing Q, K, V for Head 1</h3>
-
-<div class="math-block">
-  $$Q_1 = X \cdot W^Q_1, \quad K_1 = X \cdot W^K_1, \quad V_1 = X \cdot W^V_1$$
-</div>
-
-<p>Let us compute $Q_1 = X \cdot W^Q_1$ row by row. For the first row ($x_0 = [0.20, 1.40, 0.60, 1.80]$):</p>
-
-<div class="step-box" data-step="Q₁ row 0">
-  $$q^1_{0,0} = (0.20)(0.1) + (1.40)(0.2) + (0.60)(0.5) + (1.80)(0.3)$$
-  $$= 0.02 + 0.28 + 0.30 + 0.54 = 1.14$$
-  $$q^1_{0,1} = (0.20)(0.3) + (1.40)(0.4) + (0.60)(0.1) + (1.80)(0.2)$$
-  $$= 0.06 + 0.56 + 0.06 + 0.36 = 1.04$$
-</div>
-
-<p>Repeating for all rows (showing results; computation is analogous):</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$Q_1 = X \cdot W^Q_1 \in \mathbb{R}^{3 \times 2}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$q_0$</td><td>$q_1$</td></thead>
-    <tr><td>$x_0$</td><td>1.1400</td><td>1.0400</td></tr>
-    <tr><td>$x_1$</td><td>0.9784</td><td>1.5927</td></tr>
-    <tr><td>$x_2$</td><td>1.3627</td><td>1.1019</td></tr>
-  </table>
-</div>
-
-<p>Similarly, $K_1 = X \cdot W^K_1$:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$K_1 \in \mathbb{R}^{3 \times 2}$ — computed analogously</div>
-  <table class="matrix">
-    <thead><td></td><td>$k_0$</td><td>$k_1$</td></thead>
-    <tr><td>$x_0$</td><td>1.2200</td><td>1.2200</td></tr>
-    <tr><td>$x_1$</td><td>1.4885</td><td>1.3541</td></tr>
-    <tr><td>$x_2$</td><td>1.5239</td><td>1.3719</td></tr>
-  </table>
-</div>
-
-<p>And $V_1 = X \cdot W^V_1$:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$V_1 \in \mathbb{R}^{3 \times 2}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
-    <tr><td>$x_0$</td><td>0.7600</td><td>1.0600</td></tr>
-    <tr><td>$x_1$</td><td>0.9385</td><td>1.2961</td></tr>
-    <tr><td>$x_2$</td><td>1.0819</td><td>1.2279</td></tr>
-  </table>
-</div>
-
-<h3>4.3 Scaled Dot-Product Attention (Head 1)</h3>
-
-<p>The attention formula from the paper:</p>
-
-<div class="math-block highlight">
-  $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V$$
-</div>
-
-<h4>Step 1: Compute $Q_1 K_1^\top$ (raw scores)</h4>
-
-<div class="step-box" data-step="Score Matrix">
-  $$S = Q_1 K_1^\top \in \mathbb{R}^{3 \times 3}$$
-  $$S_{0,0} = (1.14)(1.22) + (1.04)(1.22) = 1.3908 + 1.2688 = 2.6596$$
-  $$S_{0,1} = (1.14)(1.4885) + (1.04)(1.3541) = 1.6969 + 1.4083 = 3.1052$$
-  $$S_{0,2} = (1.14)(1.5239) + (1.04)(1.3719) = 1.7373 + 1.4268 = 3.1641$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$S = Q_1 K_1^\top \in \mathbb{R}^{3 \times 3}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$K_0$</td><td>$K_1$</td><td>$K_2$</td></thead>
-    <tr><td>$Q_0$</td><td>2.6596</td><td>3.1052</td><td>3.1641</td></tr>
-    <tr><td>$Q_1$</td><td>3.1382</td><td>3.6150</td><td>3.6784</td></tr>
-    <tr><td>$Q_2$</td><td>3.0087</td><td>3.5211</td><td>3.5886</td></tr>
-  </table>
-</div>
-
-<h4>Step 2: Scale by $\frac{1}{\sqrt{d_k}} = \frac{1}{\sqrt{2}} \approx 0.7071$</h4>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\frac{S}{\sqrt{d_k}}$ — Scaled Scores</div>
-  <table class="matrix">
-    <thead><td></td><td>$K_0$</td><td>$K_1$</td><td>$K_2$</td></thead>
-    <tr><td>$Q_0$</td><td>1.8807</td><td>2.1959</td><td>2.2376</td></tr>
-    <tr><td>$Q_1$</td><td>2.2195</td><td>2.5566</td><td>2.6015</td></tr>
-    <tr><td>$Q_2$</td><td>2.1280</td><td>2.4904</td><td>2.5381</td></tr>
-  </table>
-</div>
-
-<div class="note">
-  <strong>Why scale?</strong> Without scaling, for large $d_k$, the dot products grow large in magnitude, pushing the softmax into regions with extremely small gradients. Dividing by $\sqrt{d_k}$ keeps the variance of the dot products at approximately 1, ensuring healthy gradient flow.
-</div>
-
-<h4>Step 3: Softmax (row-wise)</h4>
-
-<p>For each row $i$: $\alpha_{i,j} = \frac{\exp(s_{i,j})}{\sum_k \exp(s_{i,k})}$</p>
-
-<div class="step-box" data-step="Softmax Row 0">
-  $$\exp(1.8807) = 6.5577, \quad \exp(2.1959) = 8.9869, \quad \exp(2.2376) = 9.3729$$
-  $$\text{sum} = 24.9175$$
-  $$\alpha_{0,:} = [0.2631, \; 0.3606, \; 0.3762]$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$A_1 = \text{softmax}(S/\sqrt{d_k}) \in \mathbb{R}^{3 \times 3}$ — <strong>Attention Weights (Head 1)</strong></div>
-  <table class="matrix">
-    <thead><td></td><td>$x_0$ (I)</td><td>$x_1$ (love)</td><td>$x_2$ (AI)</td></thead>
-    <tr><td>$x_0$ (I)</td><td>0.2631</td><td>0.3606</td><td>0.3762</td></tr>
-    <tr><td>$x_1$ (love)</td><td>0.2518</td><td>0.3609</td><td>0.3873</td></tr>
-    <tr><td>$x_2$ (AI)</td><td>0.2548</td><td>0.3587</td><td>0.3864</td></tr>
-  </table>
-</div>
-
-<div class="note">
-  Each row sums to 1. Each entry $\alpha_{i,j}$ represents <em>how much token $i$ attends to token $j$</em>. Here, all tokens attend roughly equally with a slight preference for "AI" — expected from random initialization.
-</div>
-
-<h4>Step 4: Weighted sum $\text{head}_1 = A_1 \cdot V_1$</h4>
-
-<div class="step-box" data-step="Head 1 Output">
-  $$\text{head}_1[0,:] = 0.2631 \cdot [0.76, 1.06] + 0.3606 \cdot [0.9385, 1.2961] + 0.3762 \cdot [1.0819, 1.2279]$$
-  $$= [0.2000, 0.2789] + [0.3384, 0.4674] + [0.4070, 0.4619]$$
-  $$= [0.9454, 1.2082]$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\text{head}_1 = A_1 V_1 \in \mathbb{R}^{3 \times 2}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
-    <tr><td>$x_0$</td><td>0.9454</td><td>1.2082</td></tr>
-    <tr><td>$x_1$</td><td>0.9487</td><td>1.2106</td></tr>
-    <tr><td>$x_2$</td><td>0.9472</td><td>1.2095</td></tr>
-  </table>
-</div>
-
-<h3>4.4 Head 2 (Same Procedure)</h3>
-
-<p>We compute $Q_2, K_2, V_2$ using Head 2's weight matrices, then compute attention the same way. The results (abridged for space):</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\text{head}_2 \in \mathbb{R}^{3 \times 2}$ (computed analogously)</div>
-  <table class="matrix">
-    <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
-    <tr><td>$x_0$</td><td>1.1847</td><td>1.1923</td></tr>
-    <tr><td>$x_1$</td><td>1.1821</td><td>1.1938</td></tr>
-    <tr><td>$x_2$</td><td>1.1878</td><td>1.1920</td></tr>
-  </table>
-</div>
-
-<h3>4.5 Concatenation and Output Projection</h3>
-
-<div class="math-block highlight">
-  $$\text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1, \text{head}_2) \cdot W^O$$
-</div>
-
-<p>Concatenating along the last dimension:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\text{Concat} \in \mathbb{R}^{3 \times 4}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$h1_{v0}$</td><td>$h1_{v1}$</td><td>$h2_{v0}$</td><td>$h2_{v1}$</td></thead>
-    <tr><td>$x_0$</td><td>0.9454</td><td>1.2082</td><td>1.1847</td><td>1.1923</td></tr>
-    <tr><td>$x_1$</td><td>0.9487</td><td>1.2106</td><td>1.1821</td><td>1.1938</td></tr>
-    <tr><td>$x_2$</td><td>0.9472</td><td>1.2095</td><td>1.1878</td><td>1.1920</td></tr>
-  </table>
-</div>
-
-<p>We define the output projection matrix:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$W^O \in \mathbb{R}^{4 \times 4}$</div>
-  <table class="matrix">
-    <tr><td>0.2</td><td>0.1</td><td>0.3</td><td>0.4</td></tr>
-    <tr><td>0.3</td><td>0.4</td><td>0.1</td><td>0.2</td></tr>
-    <tr><td>0.1</td><td>0.2</td><td>0.4</td><td>0.3</td></tr>
-    <tr><td>0.4</td><td>0.3</td><td>0.2</td><td>0.1</td></tr>
-  </table>
-</div>
-
-<div class="math-block">
-  $$\text{MHA}_{\text{out}} = \text{Concat} \cdot W^O \in \mathbb{R}^{3 \times 4}$$
-</div>
-
-<div class="step-box" data-step="Output Projection Row 0">
-  $$\text{MHA}_{0,0} = (0.9454)(0.2) + (1.2082)(0.3) + (1.1847)(0.1) + (1.1923)(0.4)$$
-  $$= 0.1891 + 0.3625 + 0.1185 + 0.4769 = 1.1470$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\text{MHA}_{\text{out}} \in \mathbb{R}^{3 \times 4}$ — Multi-Head Attention Output</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$x_0$</td><td>1.1470</td><td>1.1100</td><td>0.9991</td><td>0.9273</td></tr>
-    <tr><td>$x_1$</td><td>1.1468</td><td>1.1099</td><td>0.9983</td><td>0.9266</td></tr>
-    <tr><td>$x_2$</td><td>1.1479</td><td>1.1107</td><td>0.9997</td><td>0.9278</td></tr>
-  </table>
-</div>
-
-
-<!-- ======================== SECTION 5 ======================== -->
-<h2 id="s5">5. Encoder: Add & Norm + Feed-Forward Network</h2>
-
-<h3>5.1 Residual Connection + Layer Normalization</h3>
-
-<div class="math-block highlight">
-  $$\text{LayerNorm}(X + \text{Sublayer}(X))$$
-</div>
-
-<p>First, the residual addition:</p>
-
-<div class="math-block">
-  $$R = X + \text{MHA}_{\text{out}}$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$R = X + \text{MHA}_{\text{out}} \in \mathbb{R}^{3 \times 4}$</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$x_0$</td><td>1.3470</td><td>2.5100</td><td>1.5991</td><td>2.7273</td></tr>
-    <tr><td>$x_1$</td><td>2.9883</td><td>2.8502</td><td>1.2083</td><td>2.3265</td></tr>
-    <tr><td>$x_2$</td><td>2.6572</td><td>1.4946</td><td>2.0197</td><td>3.1276</td></tr>
-  </table>
-</div>
-
-<h4>Layer Normalization (per-token, across $d_{\text{model}}$ dimensions)</h4>
-
-<p>For each row $r_i$, compute mean $\mu$ and variance $\sigma^2$, then normalize:</p>
-
-<div class="math-block">
-  $$\hat{r}_i = \frac{r_i - \mu_i}{\sqrt{\sigma^2_i + \epsilon}} \cdot \gamma + \beta$$
-</div>
-
-<p>where $\gamma, \beta \in \mathbb{R}^{d_{\text{model}}}$ are learnable (initialized to $\gamma = \mathbf{1}, \beta = \mathbf{0}$), and $\epsilon = 10^{-6}$.</p>
-
-<div class="step-box" data-step="LayerNorm Row 0">
-  $$\mu_0 = \frac{1.347 + 2.510 + 1.599 + 2.727}{4} = 2.0459$$
-  $$\sigma^2_0 = \frac{(1.347-2.046)^2 + (2.510-2.046)^2 + (1.599-2.046)^2 + (2.727-2.046)^2}{4}$$
-  $$= \frac{0.4886 + 0.2154 + 0.1996 + 0.4636}{4} = 0.3418$$
-  $$\sigma_0 = 0.5847$$
-  $$\hat{r}_{0} = \frac{[1.347, 2.510, 1.599, 2.727] - 2.046}{0.5847} = [-1.1949, 0.7936, -0.7641, 1.1654]$$
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\text{LN}_1 \in \mathbb{R}^{3 \times 4}$ — After First Layer Norm (with $\gamma=1, \beta=0$)</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$x_0$</td><td>-1.1949</td><td>0.7936</td><td>-0.7641</td><td>1.1654</td></tr>
-    <tr><td>$x_1$</td><td>0.8910</td><td>0.6976</td><td>-1.5989</td><td>-0.0103</td></tr>
-    <tr><td>$x_2$</td><td>0.0564</td><td>-1.5081</td><td>-0.3003</td><td>1.7521</td></tr>
-  </table>
-</div>
-
-<h3>5.2 Position-wise Feed-Forward Network</h3>
-
-<div class="math-block highlight">
-  $$\text{FFN}(x) = \max(0, \; x W_1 + b_1) W_2 + b_2$$
-</div>
-
-<p>where $W_1 \in \mathbb{R}^{4 \times 6}$, $W_2 \in \mathbb{R}^{6 \times 4}$, and biases $b_1 \in \mathbb{R}^6$, $b_2 \in \mathbb{R}^4$. The inner layer expands to $d_{ff} = 6$, then projects back.</p>
-
-<p>We initialize $W_1, W_2$ with small random values and biases to zero. Let:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$W_1 \in \mathbb{R}^{4 \times 6}$ (showing first 2 rows for brevity; full matrix used in computation)</div>
-  <table class="matrix">
-    <tr><td>0.1</td><td>-0.2</td><td>0.3</td><td>0.1</td><td>-0.1</td><td>0.2</td></tr>
-    <tr><td>-0.1</td><td>0.3</td><td>0.1</td><td>-0.2</td><td>0.2</td><td>0.1</td></tr>
-    <tr><td>0.2</td><td>0.1</td><td>-0.1</td><td>0.3</td><td>0.1</td><td>-0.2</td></tr>
-    <tr><td>-0.2</td><td>0.1</td><td>0.2</td><td>0.1</td><td>0.3</td><td>0.1</td></tr>
-  </table>
-</div>
-
-<div class="step-box" data-step="FFN: Linear1 + ReLU (Row 0)">
-  $$z_0 = \text{LN}_1[0,:] \cdot W_1 + b_1$$
-  $$z_{0,0} = (-1.195)(0.1) + (0.794)(-0.1) + (-0.764)(0.2) + (1.165)(-0.2) = -0.6845$$
-  $$\text{ReLU}(-0.6845) = 0 \quad \text{(clipped to 0)}$$
-  <p style="margin-top:12px;">Each of the 6 hidden units is computed, then ReLU zeroes out negatives.</p>
-</div>
-
-<p>After ReLU, the activated hidden vector is projected back via $W_2$, and a second residual + LayerNorm is applied:</p>
-
-<div class="math-block">
-  $$\text{Encoder Output} = \text{LayerNorm}(\text{LN}_1 + \text{FFN}(\text{LN}_1))$$
-</div>
-
-<p>Let us denote the final encoder output as $Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$. After full computation (abbreviated):</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$ — Final Encoder Output</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>I</td><td>-1.1204</td><td>0.8439</td><td>-0.8120</td><td>1.0885</td></tr>
-    <tr><td>love</td><td>0.9234</td><td>0.6501</td><td>-1.6120</td><td>0.0385</td></tr>
-    <tr><td>AI</td><td>0.1020</td><td>-1.4810</td><td>-0.2506</td><td>1.6296</td></tr>
-  </table>
-</div>
-
-
-<!-- ======================== SECTION 6 ======================== -->
-<h2 id="s6">6. Decoder: Masked Multi-Head Self-Attention</h2>
-
-<p>During training, the decoder receives the <strong>shifted-right</strong> target sequence. For target <code>[J', aime, l'IA]</code>, the decoder input at training time is <code>[&lt;BOS&gt;, J', aime]</code> (we use <code>&lt;BOS&gt;</code> as a start token, or equivalently shift).</p>
-
-<p>For simplicity, let us assume the decoder input (after embedding + PE) is:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$Y_{\text{in}} \in \mathbb{R}^{3 \times 4}$ — Decoder Input (embedded + positional)</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$y_0$ (&lt;BOS&gt;)</td><td>0.50</td><td>1.20</td><td>0.80</td><td>1.30</td></tr>
-    <tr><td>$y_1$ (J')</td><td>1.24</td><td>0.84</td><td>0.41</td><td>1.10</td></tr>
-    <tr><td>$y_2$ (aime)</td><td>2.11</td><td>0.64</td><td>0.22</td><td>1.50</td></tr>
-  </table>
-</div>
-
-<p>The self-attention in the decoder is <strong>masked</strong> to prevent positions from attending to subsequent positions. This is the <strong>causal mask</strong>:</p>
-
-<div class="math-block highlight">
-  $$M = \begin{pmatrix} 0 & -\infty & -\infty \\ 0 & 0 & -\infty \\ 0 & 0 & 0 \end{pmatrix}$$
-</div>
-
-<p>This mask is <strong>added</strong> to the scaled scores before softmax:</p>
-
-<div class="math-block">
-  $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V$$
-</div>
-
-<p>Suppose the scaled scores for Head 1 are:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$\frac{Q_{\text{dec}} K_{\text{dec}}^\top}{\sqrt{d_k}} + M$ (after masking)</div>
-  <table class="matrix">
-    <thead><td></td><td>$y_0$</td><td>$y_1$</td><td>$y_2$</td></thead>
-    <tr><td>$y_0$</td><td>1.85</td><td>$-\infty$</td><td>$-\infty$</td></tr>
-    <tr><td>$y_1$</td><td>1.72</td><td>1.94</td><td>$-\infty$</td></tr>
-    <tr><td>$y_2$</td><td>1.68</td><td>2.01</td><td>2.23</td></tr>
-  </table>
-</div>
-
-<p>After softmax (row-wise):</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">Masked Attention Weights (Decoder Self-Attention, Head 1)</div>
-  <table class="matrix">
-    <thead><td></td><td>$y_0$</td><td>$y_1$</td><td>$y_2$</td></thead>
-    <tr><td>$y_0$</td><td><strong>1.0000</strong></td><td>0.0000</td><td>0.0000</td></tr>
-    <tr><td>$y_1$</td><td>0.4450</td><td><strong>0.5550</strong></td><td>0.0000</td></tr>
-    <tr><td>$y_2$</td><td>0.2469</td><td>0.3442</td><td><strong>0.4089</strong></td></tr>
-  </table>
-</div>
-
-<div class="note">
-  <strong>Key property:</strong> The first token can only attend to itself (probability 1.0). The second token splits attention between positions 0 and 1. No token can "see into the future" — this preserves the autoregressive property during training.
-</div>
-
-<p>The rest follows identically to the encoder: compute head outputs, concatenate, project through $W^O_{\text{dec}}$, residual + LayerNorm.</p>
-
-
-<!-- ======================== SECTION 7 ======================== -->
-<h2 id="s7">7. Decoder: Encoder–Decoder Cross-Attention</h2>
-
-<p>The second attention sub-layer in the decoder attends to the <strong>encoder output</strong>. The key difference:</p>
-
-<div class="math-block highlight">
-  $$Q = Y_{\text{dec}} \cdot W^Q_{\text{cross}}, \qquad K = Z_{\text{enc}} \cdot W^K_{\text{cross}}, \qquad V = Z_{\text{enc}} \cdot W^V_{\text{cross}}$$
-</div>
-
-<p>Queries come from the <strong>decoder</strong>; Keys and Values come from the <strong>encoder</strong>. This allows each decoder position to attend over all encoder positions (no masking!).</p>
-
-<p>The attention matrix is $\mathbb{R}^{3_{\text{dec}} \times 3_{\text{enc}}}$. For instance:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">Cross-Attention Weights (Decoder → Encoder), Head 1</div>
-  <table class="matrix">
-    <thead><td></td><td>I (enc)</td><td>love (enc)</td><td>AI (enc)</td></thead>
-    <tr><td>$y_0$ (&lt;BOS&gt;)</td><td>0.31</td><td>0.35</td><td>0.34</td></tr>
-    <tr><td>$y_1$ (J')</td><td>0.38</td><td>0.30</td><td>0.32</td></tr>
-    <tr><td>$y_2$ (aime)</td><td>0.28</td><td>0.40</td><td>0.32</td></tr>
-  </table>
-</div>
-
-<p>Intuitively, when generating "J'", the decoder attends most to "I" (its translation). When generating "aime", it attends most to "love". This alignment emerges through training.</p>
-
-<p>After cross-attention → residual + LayerNorm → FFN → residual + LayerNorm, we get the decoder output:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">$Z_{\text{dec}} \in \mathbb{R}^{3 \times 4}$ — Final Decoder Output</div>
-  <table class="matrix">
-    <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
-    <tr><td>$y_0$</td><td>0.4521</td><td>-1.2301</td><td>0.8834</td><td>-0.1054</td></tr>
-    <tr><td>$y_1$</td><td>-0.6723</td><td>1.1045</td><td>-0.3981</td><td>-0.0341</td></tr>
-    <tr><td>$y_2$</td><td>0.8912</td><td>-0.5603</td><td>-1.0234</td><td>0.6925</td></tr>
-  </table>
-</div>
-
-<!-- ======================== SECTION 8 ======================== -->
-<h2 id="s8">8. Decoder: Linear Projection + Softmax</h2>
-
-<p>The final decoder output is projected to vocabulary-size logits and converted to probabilities:</p>
-
-<div class="math-block highlight">
-  $$P(y_t | y_{<t}, x) = \text{softmax}(Z_{\text{dec}} \cdot W_{\text{vocab}} + b_{\text{vocab}})$$
-</div>
-
-<p>where $W_{\text{vocab}} \in \mathbb{R}^{d_{\text{model}} \times |V|} = \mathbb{R}^{4 \times 6}$.</p>
-
-<div class="note">
-  <strong>Weight tying (Vaswani et al.):</strong> The paper shares the embedding matrix $W_{\text{emb}}^\top$ as $W_{\text{vocab}}$. This means $W_{\text{vocab}} = W_{\text{emb}}^\top \in \mathbb{R}^{4 \times 6}$, reducing parameters.
-</div>
-
-<p>Computing logits for position 0 (should predict "J'", index 3):</p>
-
-<div class="step-box" data-step="Logits Row 0">
-  $$\ell_0 = Z_{\text{dec}}[0,:] \cdot W_{\text{vocab}} \in \mathbb{R}^{6}$$
-  <p>Suppose $\ell_0 = [0.42, \; -0.18, \; 0.31, \; \mathbf{1.05}, \; 0.22, \; -0.10]$</p>
-  <p>Applying softmax:</p>
-  $$P_0 = \text{softmax}(\ell_0) = [0.1230, \; 0.0674, \; 0.1103, \; \mathbf{0.2313}, \; 0.1008, \; 0.0731]$$
-  <p>$\hat{y}_0$ = argmax = index 3 = "J'" ✓ (probability 0.2313)</p>
-</div>
-
-<div class="matrix-container">
-  <div class="matrix-label">Output Probability Distribution $P \in \mathbb{R}^{3 \times 6}$</div>
-  <table class="matrix">
-    <thead><td>Position</td><td>I</td><td>love</td><td>AI</td><td>J'</td><td>aime</td><td>l'IA</td></thead>
-    <tr><td>$y_0$ → J'</td><td>0.1230</td><td>0.0674</td><td>0.1103</td><td><strong>0.2313</strong></td><td>0.1008</td><td>0.0731</td></tr>
-    <tr><td>$y_1$ → aime</td><td>0.0890</td><td>0.1201</td><td>0.0923</td><td>0.1045</td><td><strong>0.2856</strong></td><td>0.1085</td></tr>
-    <tr><td>$y_2$ → l'IA</td><td>0.1102</td><td>0.0845</td><td>0.1367</td><td>0.0912</td><td>0.1001</td><td><strong>0.2773</strong></td></tr>
-  </table>
-</div>
-
-
-<!-- ======================== SECTION 9 ======================== -->
-<h2 id="s9">9. Loss Computation (Cross-Entropy with Label Smoothing)</h2>
-
-<p>The paper uses <strong>cross-entropy loss</strong> with <strong>label smoothing</strong> $\epsilon_{ls} = 0.1$. For a ground-truth one-hot vector $y$, the smoothed target distribution is:</p>
-
-<div class="math-block highlight">
-  $$\tilde{y}_i = \begin{cases} 1 - \epsilon_{ls} + \frac{\epsilon_{ls}}{|V|} & \text{if } i = \text{target} \\ \frac{\epsilon_{ls}}{|V|} & \text{otherwise} \end{cases}$$
-</div>
-
-<p>With $\epsilon_{ls} = 0.1$ and $|V| = 6$:</p>
-
-<div class="math-block">
-  $$\tilde{y}_{\text{target}} = 1 - 0.1 + \frac{0.1}{6} = 0.9167 \qquad \tilde{y}_{\text{other}} = \frac{0.1}{6} = 0.0167$$
-</div>
-
-<p>The cross-entropy loss for position $t$:</p>
-
-<div class="math-block">
-  $$\mathcal{L}_t = -\sum_{i=0}^{|V|-1} \tilde{y}_i \log P_t(i)$$
-</div>
-
-<div class="step-box" data-step="Loss at Position 0 (target = J', index 3)">
-  $$\mathcal{L}_0 = -\Big[0.9167 \cdot \log(0.2313) + 5 \times 0.0167 \cdot \log(\text{other probs})\Big]$$
-  $$= -\Big[0.9167 \times (-1.4634) + 0.0167 \times (\log 0.123 + \log 0.0674 + \log 0.1103 + \log 0.1008 + \log 0.0731)\Big]$$
-  $$= -\Big[-1.3414 + 0.0167 \times (-2.096 - 2.697 - 2.205 - 2.295 - 2.617)\Big]$$
-  $$= -\Big[-1.3414 + 0.0167 \times (-11.910)\Big]$$
-  $$= -\Big[-1.3414 - 0.1989\Big] = 1.5403$$
-</div>
-
-<p>Total loss averaged over all 3 positions:</p>
-
-<div class="math-block result">
-  $$\mathcal{L} = \frac{1}{3}(\mathcal{L}_0 + \mathcal{L}_1 + \mathcal{L}_2) = \frac{1}{3}(1.5403 + 1.3890 + 1.4251) = 1.4515$$
-</div>
-
-<div class="note">
-  For comparison, if the model were randomly guessing: $\mathcal{L}_{\text{random}} = -\log(1/6) \approx 1.7918$. Our untrained model is already slightly better than random due to the (lucky) initialization.
-</div>
-
-
-<!-- ======================== SECTION 10 ======================== -->
-<h2 id="s10">10. Backpropagation & Weight Update (Adam Optimizer)</h2>
-
-<h3>10.1 Gradient Computation via Backpropagation</h3>
-
-<p>The gradient flows backward through the computational graph. Using the chain rule, for any parameter $\theta$:</p>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial \theta} = \frac{\partial \mathcal{L}}{\partial P} \cdot \frac{\partial P}{\partial \ell} \cdot \frac{\partial \ell}{\partial Z_{\text{dec}}} \cdot \frac{\partial Z_{\text{dec}}}{\partial \theta}$$
-</div>
-
-<h4>Gradient through Softmax + Cross-Entropy (combined):</h4>
-
-<p>The combined gradient has a beautifully simple form. For position $t$:</p>
-
-<div class="math-block highlight">
-  $$\frac{\partial \mathcal{L}_t}{\partial \ell_{t,i}} = P_{t,i} - \tilde{y}_{t,i}$$
-</div>
-
-<div class="step-box" data-step="Gradient at Position 0">
-  $$\frac{\partial \mathcal{L}_0}{\partial \ell_0} = P_0 - \tilde{y}_0$$
-  $$= [0.1230, 0.0674, 0.1103, 0.2313, 0.1008, 0.0731] - [0.0167, 0.0167, 0.0167, 0.9167, 0.0167, 0.0167]$$
-  $$= [0.1063, \; 0.0507, \; 0.0936, \; \mathbf{-0.6854}, \; 0.0841, \; 0.0564]$$
-</div>
-
-<div class="note">
-  The gradient for the correct class (index 3) is <strong>negative</strong> ($-0.6854$): this drives the logit upward. All wrong-class gradients are positive: these drive their logits downward. The magnitudes encode the prediction error.
-</div>
-
-<h4>Gradient through Linear Projection:</h4>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial W_{\text{vocab}}} = Z_{\text{dec}}^\top \cdot \frac{\partial \mathcal{L}}{\partial \ell} \in \mathbb{R}^{4 \times 6}$$
-</div>
-
-<h4>Gradient through Decoder Layers:</h4>
-
-<p>The gradient continues backward through:</p>
-
-<div class="pipe">
-  <div class="block">FFN Layer Norm</div>
-  <div class="arrow">←</div>
-  <div class="block">FFN (ReLU grad)</div>
-  <div class="arrow">←</div>
-  <div class="block">Cross-Attn LN</div>
-  <div class="arrow">←</div>
-  <div class="block">Cross-Attention</div>
-  <div class="arrow">←</div>
-  <div class="block">Self-Attn LN</div>
-  <div class="arrow">←</div>
-  <div class="block">Masked Self-Attn</div>
-</div>
-
-<h4>Gradient through Attention:</h4>
-
-<p>For the attention mechanism $Z = \text{softmax}(S)V$ where $S = QK^\top / \sqrt{d_k}$:</p>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial V} = A^\top \cdot \frac{\partial \mathcal{L}}{\partial Z_{\text{attn}}}$$
-</div>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial A} = \frac{\partial \mathcal{L}}{\partial Z_{\text{attn}}} \cdot V^\top$$
-</div>
-
-<p>The gradient through softmax for row $i$:</p>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial S_i} = A_i \odot \left(\frac{\partial \mathcal{L}}{\partial A_i} - \left\langle \frac{\partial \mathcal{L}}{\partial A_i}, A_i \right\rangle \mathbf{1}\right)$$
-</div>
-
-<p>where $\odot$ is element-wise multiplication and $\langle \cdot, \cdot \rangle$ is the inner product. Then:</p>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial Q} = \frac{1}{\sqrt{d_k}} \cdot \frac{\partial \mathcal{L}}{\partial S} \cdot K, \qquad \frac{\partial \mathcal{L}}{\partial K} = \frac{1}{\sqrt{d_k}} \cdot \left(\frac{\partial \mathcal{L}}{\partial S}\right)^\top \cdot Q$$
-</div>
-
-<p>And finally to the weight matrices:</p>
-
-<div class="math-block">
-  $$\frac{\partial \mathcal{L}}{\partial W^Q} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial Q}, \qquad \frac{\partial \mathcal{L}}{\partial W^K} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial K}, \qquad \frac{\partial \mathcal{L}}{\partial W^V} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial V}$$
-</div>
-
-<h3>10.2 Adam Optimizer Update</h3>
-
-<p>The paper uses Adam with $\beta_1 = 0.9$, $\beta_2 = 0.98$, $\epsilon = 10^{-9}$.</p>
-
-<p>For each parameter $\theta$ at step $t$, Adam maintains first and second moment estimates:</p>
-
-<div class="math-block highlight">
-  $$m_t = \beta_1 \cdot m_{t-1} + (1 - \beta_1) \cdot g_t$$
-  $$v_t = \beta_2 \cdot v_{t-1} + (1 - \beta_2) \cdot g_t^2$$
-</div>
-
-<p>Bias correction:</p>
-
-<div class="math-block">
-  $$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$
-</div>
-
-<p>Parameter update:</p>
-
-<div class="math-block highlight">
-  $$\theta_{t+1} = \theta_t - \eta_t \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$
-</div>
-
-<div class="step-box" data-step="Concrete Update Example: W_vocab[0,3]">
-  <p>Suppose $g_1 = \frac{\partial \mathcal{L}}{\partial W_{\text{vocab}}[0,3]} = -0.3102$ at step $t = 1$:</p>
-  $$m_1 = 0.9 \times 0 + 0.1 \times (-0.3102) = -0.03102$$
-  $$v_1 = 0.98 \times 0 + 0.02 \times (-0.3102)^2 = 0.02 \times 0.0962 = 0.001924$$
-  <p>Bias correction ($t = 1$):</p>
-  $$\hat{m}_1 = \frac{-0.03102}{1 - 0.9} = -0.3102$$
-  $$\hat{v}_1 = \frac{0.001924}{1 - 0.98} = 0.0962$$
-  <p>With learning rate $\eta_1$ (from schedule, see §11):</p>
-  $$\Delta \theta = -\eta_1 \cdot \frac{-0.3102}{\sqrt{0.0962} + 10^{-9}} = \eta_1 \cdot \frac{0.3102}{0.3102} = \eta_1$$
-  <p>At $t=1$ with the warmup schedule, $\eta_1$ is very small, ensuring a gentle start.</p>
-</div>
-
-
-<!-- ======================== SECTION 11 ======================== -->
-<h2 id="s11">11. Learning Rate Schedule</h2>
-
-<p>The paper uses a custom learning rate schedule combining linear warmup with inverse-square-root decay:</p>
-
-<div class="math-block highlight">
-  $$\eta_t = d_{\text{model}}^{-0.5} \cdot \min\!\left(t^{-0.5}, \; t \cdot \text{warmup\_steps}^{-1.5}\right)$$
-</div>
-
-<p>With $d_{\text{model}} = 512$ and $\text{warmup\_steps} = 4000$:</p>
-
-<div class="matrix-container">
-  <div class="matrix-label">Learning rate at selected steps:</div>
-  <table class="matrix">
-    <thead><td>Step $t$</td><td>$t^{-0.5}$</td><td>$t \cdot 4000^{-1.5}$</td><td>$\min(\cdot)$</td><td>$\eta_t$</td></thead>
-    <tr><td>1</td><td>1.0000</td><td>$3.953 \times 10^{-6}$</td><td>$3.953 \times 10^{-6}$</td><td>$1.748 \times 10^{-7}$</td></tr>
-    <tr><td>100</td><td>0.1000</td><td>$3.953 \times 10^{-4}$</td><td>$1.000 \times 10^{-1}$</td><td>$4.420 \times 10^{-3}$</td></tr>
-    <tr><td>4000</td><td>0.0158</td><td>$1.581 \times 10^{-2}$</td><td>$1.581 \times 10^{-2}$</td><td>$6.991 \times 10^{-4}$</td></tr>
-    <tr><td>10000</td><td>0.0100</td><td>$3.953 \times 10^{-2}$</td><td>$1.000 \times 10^{-2}$</td><td>$4.420 \times 10^{-4}$</td></tr>
-    <tr><td>100000</td><td>0.00316</td><td>$3.953 \times 10^{-1}$</td><td>$3.162 \times 10^{-3}$</td><td>$1.398 \times 10^{-4}$</td></tr>
-  </table>
-</div>
-
-<div class="note">
-  <strong>Phase 1 (warmup):</strong> For $t < 4000$, the second term dominates (linear increase). This prevents large early updates when gradients are noisy.<br>
-  <strong>Phase 2 (decay):</strong> For $t > 4000$, the first term dominates ($\propto t^{-0.5}$). The peak occurs at $t = \text{warmup\_steps}$.
-</div>
-
-
-<!-- ======================== SECTION 12 ======================== -->
-<h2 id="s12">12. Summary: Complete Pipeline</h2>
-
-<div class="pipe" style="flex-direction: column; gap: 0;">
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;">Input Tokens</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$[\text{I}, \text{love}, \text{AI}]$ → indices $[0, 1, 2]$</div>
+<div class="page-wrap">
+
+  <!-- Back to portfolio -->
+  <a class="back-btn" href="index.html">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+    Back to Portfolio
+  </a>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge"><span class="spark"></span> Deep Learning • Transformer Architecture • NeurIPS 2017</div>
+    <h1>End-to-End Transformer</h1>
+    <p class="subtitle">A Complete Numerical Walkthrough — from Raw Sentence to Weight Update. Every matrix multiplication computed by hand.</p>
+    <p class="ref">Based on Vaswani et al., "Attention Is All You Need"</p>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;">Token Embedding × $\sqrt{d}$</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$E_{\text{src}} \in \mathbb{R}^{3 \times 4}$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;">+ Sinusoidal PE</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$X = E + PE \in \mathbb{R}^{3 \times 4}$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent);">Encoder MHA</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$Q,K,V$ projections → scaled dot-product → concat → $W^O$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;">Add & LayerNorm</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$\text{LN}(X + \text{MHA}(X))$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent3);">FFN (ReLU)</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$\max(0, xW_1+b_1)W_2 + b_2$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;">Add & LayerNorm</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$</div>
-  </div>
-  <div style="text-align:center;color:var(--accent2);font-size:1.5rem;margin:10px 0;">⬇</div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent4);">Decoder Masked Self-Attn</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">Causal mask ($-\infty$ upper triangle)</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent4);">Cross-Attention</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">Q from decoder, K,V from $Z_{\text{enc}}$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent3);">FFN + Add&Norm ×2</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$Z_{\text{dec}} \in \mathbb{R}^{3 \times 4}$</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent5);">Linear + Softmax</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$P \in \mathbb{R}^{3 \times 6}$ (probabilities over vocab)</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent5);">Cross-Entropy Loss</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">$\mathcal{L} = 1.4515$ (with label smoothing)</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
-    <div class="block" style="min-width:200px;border-color:var(--accent2);">Backprop + Adam</div>
-    <div class="arrow">→</div>
-    <div style="color:var(--text-dim);font-size:0.9rem;">Update all $\theta$ with warmup schedule</div>
-  </div>
-</div>
 
-<hr>
+  <div class="container">
 
-<h3>Complete Parameter Count (Toy Model)</h3>
+    <!-- TOC -->
+    <div class="panel toc reveal">
+      <h3>Contents</h3>
+      <ol>
+        <li><a href="#s1">Problem Setup & Hyperparameters</a></li>
+        <li><a href="#s2">Tokenization & Token Embedding</a></li>
+        <li><a href="#s3">Sinusoidal Positional Encoding</a></li>
+        <li><a href="#s4">Encoder: Multi-Head Self-Attention</a></li>
+        <li><a href="#s5">Encoder: Add & Norm + Feed-Forward Network</a></li>
+        <li><a href="#s6">Decoder: Masked Multi-Head Self-Attention</a></li>
+        <li><a href="#s7">Decoder: Encoder–Decoder Cross-Attention</a></li>
+        <li><a href="#s8">Decoder: Feed-Forward + Linear + Softmax</a></li>
+        <li><a href="#s9">Loss Computation (Cross-Entropy)</a></li>
+        <li><a href="#s10">Backpropagation & Weight Update (Adam)</a></li>
+        <li><a href="#s11">Learning Rate Schedule</a></li>
+        <li><a href="#s12">Summary of the Full Pipeline</a></li>
+      </ol>
+    </div>
 
-<div class="matrix-container">
-  <table class="matrix" style="width:auto;">
-    <thead><td>Component</td><td>Parameters</td><td>Count</td></thead>
-    <tr><td>Embedding $W_{\text{emb}}$</td><td>$|V| \times d = 6 \times 4$</td><td>24</td></tr>
-    <tr><td>Encoder MHA ($W^Q, W^K, W^V$ × 2 heads + $W^O$)</td><td>$3 \times 2 \times (4 \times 2) + (4 \times 4)$</td><td>64</td></tr>
-    <tr><td>Encoder FFN ($W_1, b_1, W_2, b_2$)</td><td>$4 \times 6 + 6 + 6 \times 4 + 4$</td><td>58</td></tr>
-    <tr><td>Encoder LayerNorm ($\gamma, \beta$ × 2)</td><td>$2 \times 2 \times 4$</td><td>16</td></tr>
-    <tr><td>Decoder (analogous × 3 sub-layers)</td><td>~same + cross-attn</td><td>~154</td></tr>
-    <tr><td>Final Linear (shared with emb)</td><td>0 (tied)</td><td>0</td></tr>
-    <tr><td colspan="2"><strong>Total (approximate)</strong></td><td><strong>~316</strong></td></tr>
-  </table>
-</div>
+    <!-- ======================== SECTION 1 ======================== -->
+    <h2 id="s1">1. Problem Setup & Hyperparameters</h2>
 
-<p style="margin-top:30px; color:var(--text-dim); font-style:italic;">For comparison, the original "Attention Is All You Need" base model has ~65M parameters, and the big model ~213M parameters, with $N=6$ layers each for encoder and decoder.</p>
+    <p>We will translate a toy English sentence to French:</p>
 
-<hr>
+    <div class="math-block">
+      $$\text{Source: } x = [\texttt{I}, \texttt{love}, \texttt{AI}] \qquad \text{Target: } y = [\texttt{J'}, \texttt{aime}, \texttt{l'IA}]$$
+    </div>
 
-<h3>Key Mathematical Insights</h3>
+    <p>To keep every computation tractable by hand, we use a <strong>miniaturized</strong> Transformer:</p>
 
-<p><span class="acc4"><strong>Attention is a soft dictionary lookup.</strong></span> Given a query $q$, compute compatibility with all keys, normalize via softmax to get a probability distribution, then take the expected value over the values. The $O(n^2 d)$ complexity arises from the $n \times n$ attention matrix.</p>
+    <div class="matrix-container">
+      <table class="matrix" style="width:auto;">
+        <thead><td>Hyperparameter</td><td>Paper Value</td><td>Our Toy Value</td></thead>
+        <tr><td>$d_{\text{model}}$</td><td>512</td><td><strong>4</strong></td></tr>
+        <tr><td>$h$ (number of heads)</td><td>8</td><td><strong>2</strong></td></tr>
+        <tr><td>$d_k = d_v = d_{\text{model}} / h$</td><td>64</td><td><strong>2</strong></td></tr>
+        <tr><td>$d_{ff}$</td><td>2048</td><td><strong>6</strong></td></tr>
+        <tr><td>Sequence length $n$</td><td>variable</td><td><strong>3</strong></td></tr>
+        <tr><td>Vocab size $|V|$</td><td>~37k (BPE)</td><td><strong>6</strong></td></tr>
+        <tr><td>Number of layers $N$</td><td>6</td><td><strong>1</strong></td></tr>
+      </table>
+    </div>
 
-<p><span class="acc3"><strong>Multi-head enables attending to different representation subspaces.</strong></span> With $h$ heads each of dimension $d_k = d/h$, the total computation is identical to single-head attention of dimension $d$, but the model can jointly attend to information from different subspaces.</p>
+    <p>Our vocabulary (shared for simplicity): <code>V = {I, love, AI, J', aime, l'IA}</code>, indexed 0–5.</p>
 
-<p><span class="acc"><strong>Residual connections solve the gradient vanishing problem.</strong></span> The gradient flows directly through the skip connections: $\frac{\partial}{\partial x}(x + f(x)) = I + \frac{\partial f}{\partial x}$, ensuring the gradient magnitude never falls below 1 (in the identity path).</p>
 
-<p><span class="acc2"><strong>Layer normalization stabilizes training.</strong></span> By normalizing to zero mean and unit variance per-token, it decouples the gradient of the loss from the scale of activations, enabling higher learning rates.</p>
+    <!-- ======================== SECTION 2 ======================== -->
+    <h2 id="s2">2. Tokenization & Token Embedding</h2>
 
-<p><span class="acc5"><strong>The warmup schedule prevents early divergence.</strong></span> At initialization, the attention patterns are near-uniform (softmax of random scores). Large learning rates would push the model to a bad local region. Linear warmup allows gradients to "explore" safely before committing to a descent direction.</p>
+    <p>Each token is mapped to a learnable vector $\mathbf{e}_i \in \mathbb{R}^{d_{\text{model}}}$. The embedding matrix $W_{\text{emb}} \in \mathbb{R}^{|V| \times d_{\text{model}}}$ is a parameter of the model. We initialize it (randomly) as:</p>
 
-</div>
+    <div class="matrix-container">
+      <div class="matrix-label">$W_{\text{emb}} \in \mathbb{R}^{6 \times 4}$ (each row = one token's embedding)</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>I (0)</td><td>0.10</td><td>0.20</td><td>0.30</td><td>0.40</td></tr>
+        <tr><td>love (1)</td><td>0.50</td><td>0.60</td><td>0.10</td><td>0.20</td></tr>
+        <tr><td>AI (2)</td><td>0.30</td><td>0.40</td><td>0.50</td><td>0.60</td></tr>
+        <tr><td>J' (3)</td><td>0.20</td><td>0.30</td><td>0.40</td><td>0.10</td></tr>
+        <tr><td>aime (4)</td><td>0.60</td><td>0.10</td><td>0.20</td><td>0.50</td></tr>
+        <tr><td>l'IA (5)</td><td>0.40</td><td>0.50</td><td>0.60</td><td>0.30</td></tr>
+      </table>
+    </div>
+
+    <p>As prescribed by the paper, embeddings are scaled by $\sqrt{d_{\text{model}}} = \sqrt{4} = 2$:</p>
+
+    <div class="math-block">
+      $$\tilde{\mathbf{e}}_i = \sqrt{d_{\text{model}}} \cdot \mathbf{e}_i$$
+    </div>
+
+    <p>For the source sentence $[\texttt{I}, \texttt{love}, \texttt{AI}]$:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$E_{\text{src}} \in \mathbb{R}^{3 \times 4}$ (scaled token embeddings)</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>I</td><td>0.20</td><td>0.40</td><td>0.60</td><td>0.80</td></tr>
+        <tr><td>love</td><td>1.00</td><td>1.20</td><td>0.20</td><td>0.40</td></tr>
+        <tr><td>AI</td><td>0.60</td><td>0.80</td><td>1.00</td><td>1.20</td></tr>
+      </table>
+    </div>
+
+
+    <!-- ======================== SECTION 3 ======================== -->
+    <h2 id="s3">3. Sinusoidal Positional Encoding</h2>
+
+    <p>Since the Transformer has no recurrence, we inject position information via fixed sinusoidal functions. For position $\text{pos}$ and dimension $i$:</p>
+
+    <div class="math-block highlight">
+      $$PE_{(\text{pos}, 2i)} = \sin\!\left(\frac{\text{pos}}{10000^{2i/d_{\text{model}}}}\right) \qquad PE_{(\text{pos}, 2i+1)} = \cos\!\left(\frac{\text{pos}}{10000^{2i/d_{\text{model}}}}\right)$$
+    </div>
+
+    <p>With $d_{\text{model}} = 4$, the dimension indices are $i \in \{0, 1\}$, giving wavelengths:</p>
+
+    <div class="math-block">
+      $$\omega_0 = \frac{1}{10000^{0/4}} = \frac{1}{1} = 1 \qquad \omega_1 = \frac{1}{10000^{2/4}} = \frac{1}{100} = 0.01$$
+    </div>
+
+    <h4>Computing each entry:</h4>
+
+    <div class="step-box" data-step="pos=0">
+      $$PE_{(0,0)} = \sin(0 \cdot 1) = \sin(0) = 0.0000$$
+      $$PE_{(0,1)} = \cos(0 \cdot 1) = \cos(0) = 1.0000$$
+      $$PE_{(0,2)} = \sin(0 \cdot 0.01) = \sin(0) = 0.0000$$
+      $$PE_{(0,3)} = \cos(0 \cdot 0.01) = \cos(0) = 1.0000$$
+    </div>
+
+    <div class="step-box" data-step="pos=1">
+      $$PE_{(1,0)} = \sin(1 \cdot 1) = \sin(1) = 0.8415$$
+      $$PE_{(1,1)} = \cos(1 \cdot 1) = \cos(1) = 0.5403$$
+      $$PE_{(1,2)} = \sin(1 \cdot 0.01) = \sin(0.01) = 0.0100$$
+      $$PE_{(1,3)} = \cos(1 \cdot 0.01) = \cos(0.01) = 0.9999$$
+    </div>
+
+    <div class="step-box" data-step="pos=2">
+      $$PE_{(2,0)} = \sin(2 \cdot 1) = \sin(2) = 0.9093$$
+      $$PE_{(2,1)} = \cos(2 \cdot 1) = \cos(2) = -0.4161$$
+      $$PE_{(2,2)} = \sin(2 \cdot 0.01) = \sin(0.02) = 0.0200$$
+      $$PE_{(2,3)} = \cos(2 \cdot 0.01) = \cos(0.02) = 0.9998$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$PE \in \mathbb{R}^{3 \times 4}$ — Positional Encoding Matrix</div>
+      <table class="matrix">
+        <thead><td>pos</td><td>$d_0$ (sin)</td><td>$d_1$ (cos)</td><td>$d_2$ (sin)</td><td>$d_3$ (cos)</td></thead>
+        <tr><td>0</td><td>0.0000</td><td>1.0000</td><td>0.0000</td><td>1.0000</td></tr>
+        <tr><td>1</td><td>0.8415</td><td>0.5403</td><td>0.0100</td><td>0.9999</td></tr>
+        <tr><td>2</td><td>0.9093</td><td>-0.4161</td><td>0.0200</td><td>0.9998</td></tr>
+      </table>
+    </div>
+
+    <h4>Encoder Input: $X = E_{\text{src}} + PE$</h4>
+
+    <div class="math-block result">
+      $$X = \begin{pmatrix} 0.20 & 0.40 & 0.60 & 0.80 \\ 1.00 & 1.20 & 0.20 & 0.40 \\ 0.60 & 0.80 & 1.00 & 1.20 \end{pmatrix} + \begin{pmatrix} 0.00 & 1.00 & 0.00 & 1.00 \\ 0.84 & 0.54 & 0.01 & 1.00 \\ 0.91 & -0.42 & 0.02 & 1.00 \end{pmatrix}$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$X \in \mathbb{R}^{3 \times 4}$ — Encoder Input</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$x_0$</td><td>0.2000</td><td>1.4000</td><td>0.6000</td><td>1.8000</td></tr>
+        <tr><td>$x_1$</td><td>1.8415</td><td>1.7403</td><td>0.2100</td><td>1.3999</td></tr>
+        <tr><td>$x_2$</td><td>1.5093</td><td>0.3839</td><td>1.0200</td><td>2.1998</td></tr>
+      </table>
+    </div>
+
+    <!-- ======================== SECTION 4 ======================== -->
+    <h2 id="s4">4. Encoder: Multi-Head Self-Attention</h2>
+
+    <p>The core mechanism. We have $h=2$ heads, each operating on $d_k = d_v = d_{\text{model}} / h = 2$ dimensions. For each head $j$, we learn projection matrices:</p>
+
+    <div class="math-block">
+      $$W^Q_j, W^K_j \in \mathbb{R}^{d_{\text{model}} \times d_k} = \mathbb{R}^{4 \times 2}, \qquad W^V_j \in \mathbb{R}^{d_{\text{model}} \times d_v} = \mathbb{R}^{4 \times 2}$$
+    </div>
+
+    <p>And the output projection: $W^O \in \mathbb{R}^{h \cdot d_v \times d_{\text{model}}} = \mathbb{R}^{4 \times 4}$.</p>
+
+    <h3>4.1 Weight Initialization (Randomly chosen)</h3>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Head 1 weights:</div>
+      <table class="matrix" style="display:inline-table; margin-right:16px;">
+        <thead><td colspan="3">$W^{Q}_1$</td></thead>
+        <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.1</td><td>0.3</td></tr>
+        <tr><td>$d_1$</td><td>0.2</td><td>0.4</td></tr>
+        <tr><td>$d_2$</td><td>0.5</td><td>0.1</td></tr>
+        <tr><td>$d_3$</td><td>0.3</td><td>0.2</td></tr>
+      </table>
+      <table class="matrix" style="display:inline-table; margin-right:16px;">
+        <thead><td colspan="3">$W^{K}_1$</td></thead>
+        <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.2</td><td>0.1</td></tr>
+        <tr><td>$d_1$</td><td>0.3</td><td>0.4</td></tr>
+        <tr><td>$d_2$</td><td>0.1</td><td>0.2</td></tr>
+        <tr><td>$d_3$</td><td>0.4</td><td>0.3</td></tr>
+      </table>
+      <table class="matrix" style="display:inline-table;">
+        <thead><td colspan="3">$W^{V}_1$</td></thead>
+        <tr><td></td><td>$v_0$</td><td>$v_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.3</td><td>0.2</td></tr>
+        <tr><td>$d_1$</td><td>0.1</td><td>0.4</td></tr>
+        <tr><td>$d_2$</td><td>0.4</td><td>0.1</td></tr>
+        <tr><td>$d_3$</td><td>0.2</td><td>0.3</td></tr>
+      </table>
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Head 2 weights:</div>
+      <table class="matrix" style="display:inline-table; margin-right:16px;">
+        <thead><td colspan="3">$W^{Q}_2$</td></thead>
+        <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.4</td><td>0.2</td></tr>
+        <tr><td>$d_1$</td><td>0.1</td><td>0.3</td></tr>
+        <tr><td>$d_2$</td><td>0.3</td><td>0.5</td></tr>
+        <tr><td>$d_3$</td><td>0.2</td><td>0.1</td></tr>
+      </table>
+      <table class="matrix" style="display:inline-table; margin-right:16px;">
+        <thead><td colspan="3">$W^{K}_2$</td></thead>
+        <tr><td></td><td>$k_0$</td><td>$k_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.1</td><td>0.3</td></tr>
+        <tr><td>$d_1$</td><td>0.4</td><td>0.2</td></tr>
+        <tr><td>$d_2$</td><td>0.2</td><td>0.1</td></tr>
+        <tr><td>$d_3$</td><td>0.3</td><td>0.4</td></tr>
+      </table>
+      <table class="matrix" style="display:inline-table;">
+        <thead><td colspan="3">$W^{V}_2$</td></thead>
+        <tr><td></td><td>$v_0$</td><td>$v_1$</td></tr>
+        <tr><td>$d_0$</td><td>0.2</td><td>0.3</td></tr>
+        <tr><td>$d_1$</td><td>0.4</td><td>0.1</td></tr>
+        <tr><td>$d_2$</td><td>0.1</td><td>0.5</td></tr>
+        <tr><td>$d_3$</td><td>0.3</td><td>0.2</td></tr>
+      </table>
+    </div>
+
+    <h3>4.2 Computing Q, K, V for Head 1</h3>
+
+    <div class="math-block">
+      $$Q_1 = X \cdot W^Q_1, \quad K_1 = X \cdot W^K_1, \quad V_1 = X \cdot W^V_1$$
+    </div>
+
+    <p>Let us compute $Q_1 = X \cdot W^Q_1$ row by row. For the first row ($x_0 = [0.20, 1.40, 0.60, 1.80]$):</p>
+
+    <div class="step-box" data-step="Q₁ row 0">
+      $$q^1_{0,0} = (0.20)(0.1) + (1.40)(0.2) + (0.60)(0.5) + (1.80)(0.3)$$
+      $$= 0.02 + 0.28 + 0.30 + 0.54 = 1.14$$
+      $$q^1_{0,1} = (0.20)(0.3) + (1.40)(0.4) + (0.60)(0.1) + (1.80)(0.2)$$
+      $$= 0.06 + 0.56 + 0.06 + 0.36 = 1.04$$
+    </div>
+
+    <p>Repeating for all rows (showing results; computation is analogous):</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$Q_1 = X \cdot W^Q_1 \in \mathbb{R}^{3 \times 2}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$q_0$</td><td>$q_1$</td></thead>
+        <tr><td>$x_0$</td><td>1.1400</td><td>1.0400</td></tr>
+        <tr><td>$x_1$</td><td>0.9784</td><td>1.5927</td></tr>
+        <tr><td>$x_2$</td><td>1.3627</td><td>1.1019</td></tr>
+      </table>
+    </div>
+
+    <p>Similarly, $K_1 = X \cdot W^K_1$:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$K_1 \in \mathbb{R}^{3 \times 2}$ — computed analogously</div>
+      <table class="matrix">
+        <thead><td></td><td>$k_0$</td><td>$k_1$</td></thead>
+        <tr><td>$x_0$</td><td>1.2200</td><td>1.2200</td></tr>
+        <tr><td>$x_1$</td><td>1.4885</td><td>1.3541</td></tr>
+        <tr><td>$x_2$</td><td>1.5239</td><td>1.3719</td></tr>
+      </table>
+    </div>
+
+    <p>And $V_1 = X \cdot W^V_1$:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$V_1 \in \mathbb{R}^{3 \times 2}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
+        <tr><td>$x_0$</td><td>0.7600</td><td>1.0600</td></tr>
+        <tr><td>$x_1$</td><td>0.9385</td><td>1.2961</td></tr>
+        <tr><td>$x_2$</td><td>1.0819</td><td>1.2279</td></tr>
+      </table>
+    </div>
+
+    <h3>4.3 Scaled Dot-Product Attention (Head 1)</h3>
+
+    <p>The attention formula from the paper:</p>
+
+    <div class="math-block highlight">
+      $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}}\right) V$$
+    </div>
+
+    <h4>Step 1: Compute $Q_1 K_1^\top$ (raw scores)</h4>
+
+    <div class="step-box" data-step="Score Matrix">
+      $$S = Q_1 K_1^\top \in \mathbb{R}^{3 \times 3}$$
+      $$S_{0,0} = (1.14)(1.22) + (1.04)(1.22) = 1.3908 + 1.2688 = 2.6596$$
+      $$S_{0,1} = (1.14)(1.4885) + (1.04)(1.3541) = 1.6969 + 1.4083 = 3.1052$$
+      $$S_{0,2} = (1.14)(1.5239) + (1.04)(1.3719) = 1.7373 + 1.4268 = 3.1641$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$S = Q_1 K_1^\top \in \mathbb{R}^{3 \times 3}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$K_0$</td><td>$K_1$</td><td>$K_2$</td></thead>
+        <tr><td>$Q_0$</td><td>2.6596</td><td>3.1052</td><td>3.1641</td></tr>
+        <tr><td>$Q_1$</td><td>3.1382</td><td>3.6150</td><td>3.6784</td></tr>
+        <tr><td>$Q_2$</td><td>3.0087</td><td>3.5211</td><td>3.5886</td></tr>
+      </table>
+    </div>
+
+    <h4>Step 2: Scale by $\frac{1}{\sqrt{d_k}} = \frac{1}{\sqrt{2}} \approx 0.7071$</h4>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\frac{S}{\sqrt{d_k}}$ — Scaled Scores</div>
+      <table class="matrix">
+        <thead><td></td><td>$K_0$</td><td>$K_1$</td><td>$K_2$</td></thead>
+        <tr><td>$Q_0$</td><td>1.8807</td><td>2.1959</td><td>2.2376</td></tr>
+        <tr><td>$Q_1$</td><td>2.2195</td><td>2.5566</td><td>2.6015</td></tr>
+        <tr><td>$Q_2$</td><td>2.1280</td><td>2.4904</td><td>2.5381</td></tr>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>Why scale?</strong> Without scaling, for large $d_k$, the dot products grow large in magnitude, pushing the softmax into regions with extremely small gradients. Dividing by $\sqrt{d_k}$ keeps the variance of the dot products at approximately 1, ensuring healthy gradient flow.
+    </div>
+
+    <h4>Step 3: Softmax (row-wise)</h4>
+
+    <p>For each row $i$: $\alpha_{i,j} = \frac{\exp(s_{i,j})}{\sum_k \exp(s_{i,k})}$</p>
+
+    <div class="step-box" data-step="Softmax Row 0">
+      $$\exp(1.8807) = 6.5577, \quad \exp(2.1959) = 8.9869, \quad \exp(2.2376) = 9.3729$$
+      $$\text{sum} = 24.9175$$
+      $$\alpha_{0,:} = [0.2631, \; 0.3606, \; 0.3762]$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$A_1 = \text{softmax}(S/\sqrt{d_k}) \in \mathbb{R}^{3 \times 3}$ — <strong>Attention Weights (Head 1)</strong></div>
+      <table class="matrix">
+        <thead><td></td><td>$x_0$ (I)</td><td>$x_1$ (love)</td><td>$x_2$ (AI)</td></thead>
+        <tr><td>$x_0$ (I)</td><td>0.2631</td><td>0.3606</td><td>0.3762</td></tr>
+        <tr><td>$x_1$ (love)</td><td>0.2518</td><td>0.3609</td><td>0.3873</td></tr>
+        <tr><td>$x_2$ (AI)</td><td>0.2548</td><td>0.3587</td><td>0.3864</td></tr>
+      </table>
+    </div>
+
+    <div class="note">
+      Each row sums to 1. Each entry $\alpha_{i,j}$ represents <em>how much token $i$ attends to token $j$</em>. Here, all tokens attend roughly equally with a slight preference for "AI" — expected from random initialization.
+    </div>
+
+    <h4>Step 4: Weighted sum $\text{head}_1 = A_1 \cdot V_1$</h4>
+
+    <div class="step-box" data-step="Head 1 Output">
+      $$\text{head}_1[0,:] = 0.2631 \cdot [0.76, 1.06] + 0.3606 \cdot [0.9385, 1.2961] + 0.3762 \cdot [1.0819, 1.2279]$$
+      $$= [0.2000, 0.2789] + [0.3384, 0.4674] + [0.4070, 0.4619]$$
+      $$= [0.9454, 1.2082]$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\text{head}_1 = A_1 V_1 \in \mathbb{R}^{3 \times 2}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
+        <tr><td>$x_0$</td><td>0.9454</td><td>1.2082</td></tr>
+        <tr><td>$x_1$</td><td>0.9487</td><td>1.2106</td></tr>
+        <tr><td>$x_2$</td><td>0.9472</td><td>1.2095</td></tr>
+      </table>
+    </div>
+
+    <h3>4.4 Head 2 (Same Procedure)</h3>
+
+    <p>We compute $Q_2, K_2, V_2$ using Head 2's weight matrices, then compute attention the same way. The results (abridged for space):</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\text{head}_2 \in \mathbb{R}^{3 \times 2}$ (computed analogously)</div>
+      <table class="matrix">
+        <thead><td></td><td>$v_0$</td><td>$v_1$</td></thead>
+        <tr><td>$x_0$</td><td>1.1847</td><td>1.1923</td></tr>
+        <tr><td>$x_1$</td><td>1.1821</td><td>1.1938</td></tr>
+        <tr><td>$x_2$</td><td>1.1878</td><td>1.1920</td></tr>
+      </table>
+    </div>
+
+    <h3>4.5 Concatenation and Output Projection</h3>
+
+    <div class="math-block highlight">
+      $$\text{MultiHead}(Q,K,V) = \text{Concat}(\text{head}_1, \text{head}_2) \cdot W^O$$
+    </div>
+
+    <p>Concatenating along the last dimension:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\text{Concat} \in \mathbb{R}^{3 \times 4}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$h1_{v0}$</td><td>$h1_{v1}$</td><td>$h2_{v0}$</td><td>$h2_{v1}$</td></thead>
+        <tr><td>$x_0$</td><td>0.9454</td><td>1.2082</td><td>1.1847</td><td>1.1923</td></tr>
+        <tr><td>$x_1$</td><td>0.9487</td><td>1.2106</td><td>1.1821</td><td>1.1938</td></tr>
+        <tr><td>$x_2$</td><td>0.9472</td><td>1.2095</td><td>1.1878</td><td>1.1920</td></tr>
+      </table>
+    </div>
+
+    <p>We define the output projection matrix:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$W^O \in \mathbb{R}^{4 \times 4}$</div>
+      <table class="matrix">
+        <tr><td>0.2</td><td>0.1</td><td>0.3</td><td>0.4</td></tr>
+        <tr><td>0.3</td><td>0.4</td><td>0.1</td><td>0.2</td></tr>
+        <tr><td>0.1</td><td>0.2</td><td>0.4</td><td>0.3</td></tr>
+        <tr><td>0.4</td><td>0.3</td><td>0.2</td><td>0.1</td></tr>
+      </table>
+    </div>
+
+    <div class="math-block">
+      $$\text{MHA}_{\text{out}} = \text{Concat} \cdot W^O \in \mathbb{R}^{3 \times 4}$$
+    </div>
+
+    <div class="step-box" data-step="Output Projection Row 0">
+      $$\text{MHA}_{0,0} = (0.9454)(0.2) + (1.2082)(0.3) + (1.1847)(0.1) + (1.1923)(0.4)$$
+      $$= 0.1891 + 0.3625 + 0.1185 + 0.4769 = 1.1470$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\text{MHA}_{\text{out}} \in \mathbb{R}^{3 \times 4}$ — Multi-Head Attention Output</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$x_0$</td><td>1.1470</td><td>1.1100</td><td>0.9991</td><td>0.9273</td></tr>
+        <tr><td>$x_1$</td><td>1.1468</td><td>1.1099</td><td>0.9983</td><td>0.9266</td></tr>
+        <tr><td>$x_2$</td><td>1.1479</td><td>1.1107</td><td>0.9997</td><td>0.9278</td></tr>
+      </table>
+    </div>
+
+
+    <!-- ======================== SECTION 5 ======================== -->
+    <h2 id="s5">5. Encoder: Add & Norm + Feed-Forward Network</h2>
+
+    <h3>5.1 Residual Connection + Layer Normalization</h3>
+
+    <div class="math-block highlight">
+      $$\text{LayerNorm}(X + \text{Sublayer}(X))$$
+    </div>
+
+    <p>First, the residual addition:</p>
+
+    <div class="math-block">
+      $$R = X + \text{MHA}_{\text{out}}$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$R = X + \text{MHA}_{\text{out}} \in \mathbb{R}^{3 \times 4}$</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$x_0$</td><td>1.3470</td><td>2.5100</td><td>1.5991</td><td>2.7273</td></tr>
+        <tr><td>$x_1$</td><td>2.9883</td><td>2.8502</td><td>1.2083</td><td>2.3265</td></tr>
+        <tr><td>$x_2$</td><td>2.6572</td><td>1.4946</td><td>2.0197</td><td>3.1276</td></tr>
+      </table>
+    </div>
+
+    <h4>Layer Normalization (per-token, across $d_{\text{model}}$ dimensions)</h4>
+
+    <p>For each row $r_i$, compute mean $\mu$ and variance $\sigma^2$, then normalize:</p>
+
+    <div class="math-block">
+      $$\hat{r}_i = \frac{r_i - \mu_i}{\sqrt{\sigma^2_i + \epsilon}} \cdot \gamma + \beta$$
+    </div>
+
+    <p>where $\gamma, \beta \in \mathbb{R}^{d_{\text{model}}}$ are learnable (initialized to $\gamma = \mathbf{1}, \beta = \mathbf{0}$), and $\epsilon = 10^{-6}$.</p>
+
+    <div class="step-box" data-step="LayerNorm Row 0">
+      $$\mu_0 = \frac{1.347 + 2.510 + 1.599 + 2.727}{4} = 2.0459$$
+      $$\sigma^2_0 = \frac{(1.347-2.046)^2 + (2.510-2.046)^2 + (1.599-2.046)^2 + (2.727-2.046)^2}{4}$$
+      $$= \frac{0.4886 + 0.2154 + 0.1996 + 0.4636}{4} = 0.3418$$
+      $$\sigma_0 = 0.5847$$
+      $$\hat{r}_{0} = \frac{[1.347, 2.510, 1.599, 2.727] - 2.046}{0.5847} = [-1.1949, 0.7936, -0.7641, 1.1654]$$
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\text{LN}_1 \in \mathbb{R}^{3 \times 4}$ — After First Layer Norm (with $\gamma=1, \beta=0$)</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$x_0$</td><td>-1.1949</td><td>0.7936</td><td>-0.7641</td><td>1.1654</td></tr>
+        <tr><td>$x_1$</td><td>0.8910</td><td>0.6976</td><td>-1.5989</td><td>-0.0103</td></tr>
+        <tr><td>$x_2$</td><td>0.0564</td><td>-1.5081</td><td>-0.3003</td><td>1.7521</td></tr>
+      </table>
+    </div>
+
+    <h3>5.2 Position-wise Feed-Forward Network</h3>
+
+    <div class="math-block highlight">
+      $$\text{FFN}(x) = \max(0, \; x W_1 + b_1) W_2 + b_2$$
+    </div>
+
+    <p>where $W_1 \in \mathbb{R}^{4 \times 6}$, $W_2 \in \mathbb{R}^{6 \times 4}$, and biases $b_1 \in \mathbb{R}^6$, $b_2 \in \mathbb{R}^4$. The inner layer expands to $d_{ff} = 6$, then projects back.</p>
+
+    <p>We initialize $W_1, W_2$ with small random values and biases to zero. Let:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$W_1 \in \mathbb{R}^{4 \times 6}$</div>
+      <table class="matrix">
+        <tr><td>0.1</td><td>-0.2</td><td>0.3</td><td>0.1</td><td>-0.1</td><td>0.2</td></tr>
+        <tr><td>-0.1</td><td>0.3</td><td>0.1</td><td>-0.2</td><td>0.2</td><td>0.1</td></tr>
+        <tr><td>0.2</td><td>0.1</td><td>-0.1</td><td>0.3</td><td>0.1</td><td>-0.2</td></tr>
+        <tr><td>-0.2</td><td>0.1</td><td>0.2</td><td>0.1</td><td>0.3</td><td>0.1</td></tr>
+      </table>
+    </div>
+
+    <div class="step-box" data-step="FFN: Linear1 + ReLU (Row 0)">
+      $$z_0 = \text{LN}_1[0,:] \cdot W_1 + b_1$$
+      $$z_{0,0} = (-1.195)(0.1) + (0.794)(-0.1) + (-0.764)(0.2) + (1.165)(-0.2) = -0.6845$$
+      $$\text{ReLU}(-0.6845) = 0 \quad \text{(clipped to 0)}$$
+      <p style="margin-top:12px;">Each of the 6 hidden units is computed, then ReLU zeroes out negatives.</p>
+    </div>
+
+    <p>After ReLU, the activated hidden vector is projected back via $W_2$, and a second residual + LayerNorm is applied:</p>
+
+    <div class="math-block">
+      $$\text{Encoder Output} = \text{LayerNorm}(\text{LN}_1 + \text{FFN}(\text{LN}_1))$$
+    </div>
+
+    <p>Let us denote the final encoder output as $Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$. After full computation (abbreviated):</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$ — Final Encoder Output</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>I</td><td>-1.1204</td><td>0.8439</td><td>-0.8120</td><td>1.0885</td></tr>
+        <tr><td>love</td><td>0.9234</td><td>0.6501</td><td>-1.6120</td><td>0.0385</td></tr>
+        <tr><td>AI</td><td>0.1020</td><td>-1.4810</td><td>-0.2506</td><td>1.6296</td></tr>
+      </table>
+    </div>
+
+
+    <!-- ======================== SECTION 6 ======================== -->
+    <h2 id="s6">6. Decoder: Masked Multi-Head Self-Attention</h2>
+
+    <p>During training, the decoder receives the <strong>shifted-right</strong> target sequence. For target <code>[J', aime, l'IA]</code>, the decoder input at training time is <code>[&lt;BOS&gt;, J', aime]</code> (we use <code>&lt;BOS&gt;</code> as a start token, or equivalently shift).</p>
+
+    <p>For simplicity, let us assume the decoder input (after embedding + PE) is:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$Y_{\text{in}} \in \mathbb{R}^{3 \times 4}$ — Decoder Input (embedded + positional)</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$y_0$ (&lt;BOS&gt;)</td><td>0.50</td><td>1.20</td><td>0.80</td><td>1.30</td></tr>
+        <tr><td>$y_1$ (J')</td><td>1.24</td><td>0.84</td><td>0.41</td><td>1.10</td></tr>
+        <tr><td>$y_2$ (aime)</td><td>2.11</td><td>0.64</td><td>0.22</td><td>1.50</td></tr>
+      </table>
+    </div>
+
+    <p>The self-attention in the decoder is <strong>masked</strong> to prevent positions from attending to subsequent positions. This is the <strong>causal mask</strong>:</p>
+
+    <div class="math-block highlight">
+      $$M = \begin{pmatrix} 0 & -\infty & -\infty \\ 0 & 0 & -\infty \\ 0 & 0 & 0 \end{pmatrix}$$
+    </div>
+
+    <p>This mask is <strong>added</strong> to the scaled scores before softmax:</p>
+
+    <div class="math-block">
+      $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V$$
+    </div>
+
+    <p>Suppose the scaled scores for Head 1 are:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$\frac{Q_{\text{dec}} K_{\text{dec}}^\top}{\sqrt{d_k}} + M$ (after masking)</div>
+      <table class="matrix">
+        <thead><td></td><td>$y_0$</td><td>$y_1$</td><td>$y_2$</td></thead>
+        <tr><td>$y_0$</td><td>1.85</td><td>$-\infty$</td><td>$-\infty$</td></tr>
+        <tr><td>$y_1$</td><td>1.72</td><td>1.94</td><td>$-\infty$</td></tr>
+        <tr><td>$y_2$</td><td>1.68</td><td>2.01</td><td>2.23</td></tr>
+      </table>
+    </div>
+
+    <p>After softmax (row-wise):</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Masked Attention Weights (Decoder Self-Attention, Head 1)</div>
+      <table class="matrix">
+        <thead><td></td><td>$y_0$</td><td>$y_1$</td><td>$y_2$</td></thead>
+        <tr><td>$y_0$</td><td><strong>1.0000</strong></td><td>0.0000</td><td>0.0000</td></tr>
+        <tr><td>$y_1$</td><td>0.4450</td><td><strong>0.5550</strong></td><td>0.0000</td></tr>
+        <tr><td>$y_2$</td><td>0.2469</td><td>0.3442</td><td><strong>0.4089</strong></td></tr>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>Key property:</strong> The first token can only attend to itself (probability 1.0). The second token splits attention between positions 0 and 1. No token can "see into the future" — this preserves the autoregressive property during training.
+    </div>
+
+    <p>The rest follows identically to the encoder: compute head outputs, concatenate, project through $W^O_{\text{dec}}$, residual + LayerNorm.</p>
+
+
+    <!-- ======================== SECTION 7 ======================== -->
+    <h2 id="s7">7. Decoder: Encoder–Decoder Cross-Attention</h2>
+
+    <p>The second attention sub-layer in the decoder attends to the <strong>encoder output</strong>. The key difference:</p>
+
+    <div class="math-block highlight">
+      $$Q = Y_{\text{dec}} \cdot W^Q_{\text{cross}}, \qquad K = Z_{\text{enc}} \cdot W^K_{\text{cross}}, \qquad V = Z_{\text{enc}} \cdot W^V_{\text{cross}}$$
+    </div>
+
+    <p>Queries come from the <strong>decoder</strong>; Keys and Values come from the <strong>encoder</strong>. This allows each decoder position to attend over all encoder positions (no masking!).</p>
+
+    <p>The attention matrix is $\mathbb{R}^{3_{\text{dec}} \times 3_{\text{enc}}}$. For instance:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Cross-Attention Weights (Decoder → Encoder), Head 1</div>
+      <table class="matrix">
+        <thead><td></td><td>I (enc)</td><td>love (enc)</td><td>AI (enc)</td></thead>
+        <tr><td>$y_0$ (&lt;BOS&gt;)</td><td>0.31</td><td>0.35</td><td>0.34</td></tr>
+        <tr><td>$y_1$ (J')</td><td>0.38</td><td>0.30</td><td>0.32</td></tr>
+        <tr><td>$y_2$ (aime)</td><td>0.28</td><td>0.40</td><td>0.32</td></tr>
+      </table>
+    </div>
+
+    <p>Intuitively, when generating "J'", the decoder attends most to "I" (its translation). When generating "aime", it attends most to "love". This alignment emerges through training.</p>
+
+    <p>After cross-attention → residual + LayerNorm → FFN → residual + LayerNorm, we get the decoder output:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">$Z_{\text{dec}} \in \mathbb{R}^{3 \times 4}$ — Final Decoder Output</div>
+      <table class="matrix">
+        <thead><td></td><td>$d_0$</td><td>$d_1$</td><td>$d_2$</td><td>$d_3$</td></thead>
+        <tr><td>$y_0$</td><td>0.4521</td><td>-1.2301</td><td>0.8834</td><td>-0.1054</td></tr>
+        <tr><td>$y_1$</td><td>-0.6723</td><td>1.1045</td><td>-0.3981</td><td>-0.0341</td></tr>
+        <tr><td>$y_2$</td><td>0.8912</td><td>-0.5603</td><td>-1.0234</td><td>0.6925</td></tr>
+      </table>
+    </div>
+
+    <!-- ======================== SECTION 8 ======================== -->
+    <h2 id="s8">8. Decoder: Linear Projection + Softmax</h2>
+
+    <p>The final decoder output is projected to vocabulary-size logits and converted to probabilities:</p>
+
+    <div class="math-block highlight">
+      $$P(y_t | y_{<t}, x) = \text{softmax}(Z_{\text{dec}} \cdot W_{\text{vocab}} + b_{\text{vocab}})$$
+    </div>
+
+    <p>where $W_{\text{vocab}} \in \mathbb{R}^{d_{\text{model}} \times |V|} = \mathbb{R}^{4 \times 6}$.</p>
+
+    <div class="note">
+      <strong>Weight tying (Vaswani et al.):</strong> The paper shares the embedding matrix $W_{\text{emb}}^\top$ as $W_{\text{vocab}}$. This means $W_{\text{vocab}} = W_{\text{emb}}^\top \in \mathbb{R}^{4 \times 6}$, reducing parameters.
+    </div>
+
+    <p>Computing logits for position 0 (should predict "J'", index 3):</p>
+
+    <div class="step-box" data-step="Logits Row 0">
+      $$\ell_0 = Z_{\text{dec}}[0,:] \cdot W_{\text{vocab}} \in \mathbb{R}^{6}$$
+      <p>Suppose $\ell_0 = [0.42, \; -0.18, \; 0.31, \; \mathbf{1.05}, \; 0.22, \; -0.10]$</p>
+      <p>Applying softmax:</p>
+      $$P_0 = \text{softmax}(\ell_0) = [0.1230, \; 0.0674, \; 0.1103, \; \mathbf{0.2313}, \; 0.1008, \; 0.0731]$$
+      <p>$\hat{y}_0$ = argmax = index 3 = "J'" ✓ (probability 0.2313)</p>
+    </div>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Output Probability Distribution $P \in \mathbb{R}^{3 \times 6}$</div>
+      <table class="matrix">
+        <thead><td>Position</td><td>I</td><td>love</td><td>AI</td><td>J'</td><td>aime</td><td>l'IA</td></thead>
+        <tr><td>$y_0$ → J'</td><td>0.1230</td><td>0.0674</td><td>0.1103</td><td><strong>0.2313</strong></td><td>0.1008</td><td>0.0731</td></tr>
+        <tr><td>$y_1$ → aime</td><td>0.0890</td><td>0.1201</td><td>0.0923</td><td>0.1045</td><td><strong>0.2856</strong></td><td>0.1085</td></tr>
+        <tr><td>$y_2$ → l'IA</td><td>0.1102</td><td>0.0845</td><td>0.1367</td><td>0.0912</td><td>0.1001</td><td><strong>0.2773</strong></td></tr>
+      </table>
+    </div>
+
+
+    <!-- ======================== SECTION 9 ======================== -->
+    <h2 id="s9">9. Loss Computation (Cross-Entropy with Label Smoothing)</h2>
+
+    <p>The paper uses <strong>cross-entropy loss</strong> with <strong>label smoothing</strong> $\epsilon_{ls} = 0.1$. For a ground-truth one-hot vector $y$, the smoothed target distribution is:</p>
+
+    <div class="math-block highlight">
+      $$\tilde{y}_i = \begin{cases} 1 - \epsilon_{ls} + \frac{\epsilon_{ls}}{|V|} & \text{if } i = \text{target} \\ \frac{\epsilon_{ls}}{|V|} & \text{otherwise} \end{cases}$$
+    </div>
+
+    <p>With $\epsilon_{ls} = 0.1$ and $|V| = 6$:</p>
+
+    <div class="math-block">
+      $$\tilde{y}_{\text{target}} = 1 - 0.1 + \frac{0.1}{6} = 0.9167 \qquad \tilde{y}_{\text{other}} = \frac{0.1}{6} = 0.0167$$
+    </div>
+
+    <p>The cross-entropy loss for position $t$:</p>
+
+    <div class="math-block">
+      $$\mathcal{L}_t = -\sum_{i=0}^{|V|-1} \tilde{y}_i \log P_t(i)$$
+    </div>
+
+    <div class="step-box" data-step="Loss at Position 0 (target = J', index 3)">
+      $$\mathcal{L}_0 = -\Big[0.9167 \cdot \log(0.2313) + 5 \times 0.0167 \cdot \log(\text{other probs})\Big]$$
+      $$= -\Big[0.9167 \times (-1.4634) + 0.0167 \times (\log 0.123 + \log 0.0674 + \log 0.1103 + \log 0.1008 + \log 0.0731)\Big]$$
+      $$= -\Big[-1.3414 + 0.0167 \times (-2.096 - 2.697 - 2.205 - 2.295 - 2.617)\Big]$$
+      $$= -\Big[-1.3414 + 0.0167 \times (-11.910)\Big]$$
+      $$= -\Big[-1.3414 - 0.1989\Big] = 1.5403$$
+    </div>
+
+    <p>Total loss averaged over all 3 positions:</p>
+
+    <div class="math-block result">
+      $$\mathcal{L} = \frac{1}{3}(\mathcal{L}_0 + \mathcal{L}_1 + \mathcal{L}_2) = \frac{1}{3}(1.5403 + 1.3890 + 1.4251) = 1.4515$$
+    </div>
+
+    <div class="note">
+      For comparison, if the model were randomly guessing: $\mathcal{L}_{\text{random}} = -\log(1/6) \approx 1.7918$. Our untrained model is already slightly better than random due to the (lucky) initialization.
+    </div>
+
+
+    <!-- ======================== SECTION 10 ======================== -->
+    <h2 id="s10">10. Backpropagation & Weight Update (Adam Optimizer)</h2>
+
+    <h3>10.1 Gradient Computation via Backpropagation</h3>
+
+    <p>The gradient flows backward through the computational graph. Using the chain rule, for any parameter $\theta$:</p>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial \theta} = \frac{\partial \mathcal{L}}{\partial P} \cdot \frac{\partial P}{\partial \ell} \cdot \frac{\partial \ell}{\partial Z_{\text{dec}}} \cdot \frac{\partial Z_{\text{dec}}}{\partial \theta}$$
+    </div>
+
+    <h4>Gradient through Softmax + Cross-Entropy (combined):</h4>
+
+    <p>The combined gradient has a beautifully simple form. For position $t$:</p>
+
+    <div class="math-block highlight">
+      $$\frac{\partial \mathcal{L}_t}{\partial \ell_{t,i}} = P_{t,i} - \tilde{y}_{t,i}$$
+    </div>
+
+    <div class="step-box" data-step="Gradient at Position 0">
+      $$\frac{\partial \mathcal{L}_0}{\partial \ell_0} = P_0 - \tilde{y}_0$$
+      $$= [0.1230, 0.0674, 0.1103, 0.2313, 0.1008, 0.0731] - [0.0167, 0.0167, 0.0167, 0.9167, 0.0167, 0.0167]$$
+      $$= [0.1063, \; 0.0507, \; 0.0936, \; \mathbf{-0.6854}, \; 0.0841, \; 0.0564]$$
+    </div>
+
+    <div class="note">
+      The gradient for the correct class (index 3) is <strong>negative</strong> ($-0.6854$): this drives the logit upward. All wrong-class gradients are positive: these drive their logits downward. The magnitudes encode the prediction error.
+    </div>
+
+    <h4>Gradient through Linear Projection:</h4>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial W_{\text{vocab}}} = Z_{\text{dec}}^\top \cdot \frac{\partial \mathcal{L}}{\partial \ell} \in \mathbb{R}^{4 \times 6}$$
+    </div>
+
+    <h4>Gradient through Decoder Layers:</h4>
+
+    <p>The gradient continues backward through:</p>
+
+    <div class="pipe">
+      <div class="block">FFN Layer Norm</div>
+      <div class="arrow">←</div>
+      <div class="block">FFN (ReLU grad)</div>
+      <div class="arrow">←</div>
+      <div class="block">Cross-Attn LN</div>
+      <div class="arrow">←</div>
+      <div class="block">Cross-Attention</div>
+      <div class="arrow">←</div>
+      <div class="block">Self-Attn LN</div>
+      <div class="arrow">←</div>
+      <div class="block">Masked Self-Attn</div>
+    </div>
+
+    <h4>Gradient through Attention:</h4>
+
+    <p>For the attention mechanism $Z = \text{softmax}(S)V$ where $S = QK^\top / \sqrt{d_k}$:</p>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial V} = A^\top \cdot \frac{\partial \mathcal{L}}{\partial Z_{\text{attn}}}$$
+    </div>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial A} = \frac{\partial \mathcal{L}}{\partial Z_{\text{attn}}} \cdot V^\top$$
+    </div>
+
+    <p>The gradient through softmax for row $i$:</p>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial S_i} = A_i \odot \left(\frac{\partial \mathcal{L}}{\partial A_i} - \left\langle \frac{\partial \mathcal{L}}{\partial A_i}, A_i \right\rangle \mathbf{1}\right)$$
+    </div>
+
+    <p>where $\odot$ is element-wise multiplication and $\langle \cdot, \cdot \rangle$ is the inner product. Then:</p>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial Q} = \frac{1}{\sqrt{d_k}} \cdot \frac{\partial \mathcal{L}}{\partial S} \cdot K, \qquad \frac{\partial \mathcal{L}}{\partial K} = \frac{1}{\sqrt{d_k}} \cdot \left(\frac{\partial \mathcal{L}}{\partial S}\right)^\top \cdot Q$$
+    </div>
+
+    <p>And finally to the weight matrices:</p>
+
+    <div class="math-block">
+      $$\frac{\partial \mathcal{L}}{\partial W^Q} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial Q}, \qquad \frac{\partial \mathcal{L}}{\partial W^K} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial K}, \qquad \frac{\partial \mathcal{L}}{\partial W^V} = X^\top \cdot \frac{\partial \mathcal{L}}{\partial V}$$
+    </div>
+
+    <h3>10.2 Adam Optimizer Update</h3>
+
+    <p>The paper uses Adam with $\beta_1 = 0.9$, $\beta_2 = 0.98$, $\epsilon = 10^{-9}$.</p>
+
+    <p>For each parameter $\theta$ at step $t$, Adam maintains first and second moment estimates:</p>
+
+    <div class="math-block highlight">
+      $$m_t = \beta_1 \cdot m_{t-1} + (1 - \beta_1) \cdot g_t$$
+      $$v_t = \beta_2 \cdot v_{t-1} + (1 - \beta_2) \cdot g_t^2$$
+    </div>
+
+    <p>Bias correction:</p>
+
+    <div class="math-block">
+      $$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat{v}_t = \frac{v_t}{1 - \beta_2^t}$$
+    </div>
+
+    <p>Parameter update:</p>
+
+    <div class="math-block highlight">
+      $$\theta_{t+1} = \theta_t - \eta_t \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$$
+    </div>
+
+    <div class="step-box" data-step="Concrete Update Example: W_vocab[0,3]">
+      <p>Suppose $g_1 = \frac{\partial \mathcal{L}}{\partial W_{\text{vocab}}[0,3]} = -0.3102$ at step $t = 1$:</p>
+      $$m_1 = 0.9 \times 0 + 0.1 \times (-0.3102) = -0.03102$$
+      $$v_1 = 0.98 \times 0 + 0.02 \times (-0.3102)^2 = 0.02 \times 0.0962 = 0.001924$$
+      <p>Bias correction ($t = 1$):</p>
+      $$\hat{m}_1 = \frac{-0.03102}{1 - 0.9} = -0.3102$$
+      $$\hat{v}_1 = \frac{0.001924}{1 - 0.98} = 0.0962$$
+      <p>With learning rate $\eta_1$ (from schedule, see §11):</p>
+      $$\Delta \theta = -\eta_1 \cdot \frac{-0.3102}{\sqrt{0.0962} + 10^{-9}} = \eta_1 \cdot \frac{0.3102}{0.3102} = \eta_1$$
+      <p>At $t=1$ with the warmup schedule, $\eta_1$ is very small, ensuring a gentle start.</p>
+    </div>
+
+
+    <!-- ======================== SECTION 11 ======================== -->
+    <h2 id="s11">11. Learning Rate Schedule</h2>
+
+    <p>The paper uses a custom learning rate schedule combining linear warmup with inverse-square-root decay:</p>
+
+    <div class="math-block highlight">
+      $$\eta_t = d_{\text{model}}^{-0.5} \cdot \min\!\left(t^{-0.5}, \; t \cdot \text{warmup\_steps}^{-1.5}\right)$$
+    </div>
+
+    <p>With $d_{\text{model}} = 512$ and $\text{warmup\_steps} = 4000$:</p>
+
+    <div class="matrix-container">
+      <div class="matrix-label">Learning rate at selected steps:</div>
+      <table class="matrix">
+        <thead><td>Step $t$</td><td>$t^{-0.5}$</td><td>$t \cdot 4000^{-1.5}$</td><td>$\min(\cdot)$</td><td>$\eta_t$</td></thead>
+        <tr><td>1</td><td>1.0000</td><td>$3.953 \times 10^{-6}$</td><td>$3.953 \times 10^{-6}$</td><td>$1.748 \times 10^{-7}$</td></tr>
+        <tr><td>100</td><td>0.1000</td><td>$3.953 \times 10^{-4}$</td><td>$1.000 \times 10^{-1}$</td><td>$4.420 \times 10^{-3}$</td></tr>
+        <tr><td>4000</td><td>0.0158</td><td>$1.581 \times 10^{-2}$</td><td>$1.581 \times 10^{-2}$</td><td>$6.991 \times 10^{-4}$</td></tr>
+        <tr><td>10000</td><td>0.0100</td><td>$3.953 \times 10^{-2}$</td><td>$1.000 \times 10^{-2}$</td><td>$4.420 \times 10^{-4}$</td></tr>
+        <tr><td>100000</td><td>0.00316</td><td>$3.953 \times 10^{-1}$</td><td>$3.162 \times 10^{-3}$</td><td>$1.398 \times 10^{-4}$</td></tr>
+      </table>
+    </div>
+
+    <div class="note">
+      <strong>Phase 1 (warmup):</strong> For $t < 4000$, the second term dominates (linear increase). This prevents large early updates when gradients are noisy.<br>
+      <strong>Phase 2 (decay):</strong> For $t > 4000$, the first term dominates ($\propto t^{-0.5}$). The peak occurs at $t = \text{warmup\_steps}$.
+    </div>
+
+
+    <!-- ======================== SECTION 12 ======================== -->
+    <h2 id="s12">12. Summary: Complete Pipeline</h2>
+
+    <div class="pipe" style="flex-direction: column; gap: 0;">
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;">Input Tokens</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$[\text{I}, \text{love}, \text{AI}]$ → indices $[0, 1, 2]$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;">Token Embedding × $\sqrt{d}$</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$E_{\text{src}} \in \mathbb{R}^{3 \times 4}$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;">+ Sinusoidal PE</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$X = E + PE \in \mathbb{R}^{3 \times 4}$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent1);">Encoder MHA</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$Q,K,V$ projections → scaled dot-product → concat → $W^O$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;">Add & LayerNorm</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$\text{LN}(X + \text{MHA}(X))$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent4);">FFN (ReLU)</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$\max(0, xW_1+b_1)W_2 + b_2$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;">Add & LayerNorm</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$Z_{\text{enc}} \in \mathbb{R}^{3 \times 4}$</div>
+      </div>
+      <div style="text-align:center;color:var(--accent3);font-size:1.5rem;margin:10px 0;">⬇</div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent2);">Decoder Masked Self-Attn</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">Causal mask ($-\infty$ upper triangle)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent2);">Cross-Attention</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">Q from decoder, K,V from $Z_{\text{enc}}$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent4);">FFN + Add&Norm ×2</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$Z_{\text{dec}} \in \mathbb{R}^{3 \times 4}$</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent3);">Linear + Softmax</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$P \in \mathbb{R}^{3 \times 6}$ (probabilities over vocab)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent3);">Cross-Entropy Loss</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">$\mathcal{L} = 1.4515$ (with label smoothing)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0;">
+        <div class="block" style="min-width:200px;border-color:var(--accent1);">Backprop + Adam</div>
+        <div class="arrow">→</div>
+        <div style="color:var(--muted);font-size:0.9rem;">Update all $\theta$ with warmup schedule</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <h3>Complete Parameter Count (Toy Model)</h3>
+
+    <div class="matrix-container">
+      <table class="matrix" style="width:auto;">
+        <thead><td>Component</td><td>Parameters</td><td>Count</td></thead>
+        <tr><td>Embedding $W_{\text{emb}}$</td><td>$|V| \times d = 6 \times 4$</td><td>24</td></tr>
+        <tr><td>Encoder MHA ($W^Q, W^K, W^V$ × 2 heads + $W^O$)</td><td>$3 \times 2 \times (4 \times 2) + (4 \times 4)$</td><td>64</td></tr>
+        <tr><td>Encoder FFN ($W_1, b_1, W_2, b_2$)</td><td>$4 \times 6 + 6 + 6 \times 4 + 4$</td><td>58</td></tr>
+        <tr><td>Encoder LayerNorm ($\gamma, \beta$ × 2)</td><td>$2 \times 2 \times 4$</td><td>16</td></tr>
+        <tr><td>Decoder (analogous × 3 sub-layers)</td><td>~same + cross-attn</td><td>~154</td></tr>
+        <tr><td>Final Linear (shared with emb)</td><td>0 (tied)</td><td>0</td></tr>
+        <tr><td colspan="2"><strong>Total (approximate)</strong></td><td><strong>~316</strong></td></tr>
+      </table>
+    </div>
+
+    <p style="margin-top:30px; font-style:italic;">For comparison, the original "Attention Is All You Need" base model has ~65M parameters, and the big model ~213M parameters, with $N=6$ layers each for encoder and decoder.</p>
+
+    <hr>
+
+    <h3>Key Mathematical Insights</h3>
+
+    <p><span class="acc1"><strong>Attention is a soft dictionary lookup.</strong></span> Given a query $q$, compute compatibility with all keys, normalize via softmax to get a probability distribution, then take the expected value over the values. The $O(n^2 d)$ complexity arises from the $n \times n$ attention matrix.</p>
+
+    <p><span class="acc4"><strong>Multi-head enables attending to different representation subspaces.</strong></span> With $h$ heads each of dimension $d_k = d/h$, the total computation is identical to single-head attention of dimension $d$, but the model can jointly attend to information from different subspaces.</p>
+
+    <p><span class="acc2"><strong>Residual connections solve the gradient vanishing problem.</strong></span> The gradient flows directly through the skip connections: $\frac{\partial}{\partial x}(x + f(x)) = I + \frac{\partial f}{\partial x}$, ensuring the gradient magnitude never falls below 1 (in the identity path).</p>
+
+    <p><span class="acc3"><strong>Layer normalization stabilizes training.</strong></span> By normalizing to zero mean and unit variance per-token, it decouples the gradient of the loss from the scale of activations, enabling higher learning rates.</p>
+
+    <p><span style="color:#ef4444;"><strong>The warmup schedule prevents early divergence.</strong></span> At initialization, the attention patterns are near-uniform (softmax of random scores). Large learning rates would push the model to a bad local region. Linear warmup allows gradients to "explore" safely before committing to a descent direction.</p>
+
+    <div class="tags" style="margin-top:30px; justify-content:center;">
+      <span class="tag">Transformer</span>
+      <span class="tag">Self-Attention</span>
+      <span class="tag">Positional Encoding</span>
+      <span class="tag">Backpropagation</span>
+      <span class="tag">Adam Optimizer</span>
+      <span class="tag">NeurIPS 2017</span>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- Footer -->
+  <footer style="text-align:center; padding:30px 18px 40px; color:rgba(238,242,255,.45); font-size:13px;">
+    <div style="display:inline-flex; gap:10px; align-items:center; padding:10px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.05);">
+      <span>© <span id="y"></span> Ayashkant Mishra</span>
+      <span style="opacity:.5;">•</span>
+      <a href="index.html" style="color:var(--accent2); text-decoration:none;">Back to Portfolio</a>
+    </div>
+  </footer>
+
+</div><!-- /page-wrap -->
 
 <script>
+  document.getElementById("y").textContent = new Date().getFullYear();
+
+  // KaTeX rendering
   document.addEventListener("DOMContentLoaded", function() {
     renderMathInElement(document.body, {
       delimiters: [
@@ -1252,7 +1385,32 @@
       throwOnError: false
     });
   });
-</script>
 
+  // Cursor glow (same as portfolio)
+  const root = document.documentElement;
+  let targetX = 50, targetY = 20, currentX = 50, currentY = 20;
+  const updateGlow = () => {
+    currentX += (targetX - currentX) * 0.08;
+    currentY += (targetY - currentY) * 0.08;
+    root.style.setProperty("--mx", currentX + "%");
+    root.style.setProperty("--my", currentY + "%");
+    requestAnimationFrame(updateGlow);
+  };
+  updateGlow();
+  window.addEventListener("pointermove", (e) => {
+    targetX = Math.round((e.clientX / innerWidth) * 100);
+    targetY = Math.round((e.clientY / innerHeight) * 100);
+  });
+
+  // Reveal on scroll
+  const revealEls = document.querySelectorAll(".panel, .matrix-container, .step-box");
+  revealEls.forEach(el => el.classList.add("reveal"));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("is-visible"); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.08 });
+  revealEls.forEach(el => obs.observe(el));
+</script>
 </body>
 </html>
