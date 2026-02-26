@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>From Graph Neural Networks to Graph Attention Networks: A Mathematical Deep Dive</title>
+
+  <!-- MathJax for LaTeX equations -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    :root{
+      --bg:#ffffff; --fg:#111827; --muted:#6b7280; --border:#e5e7eb;
+      --code-bg:#0b1020; --code-fg:#e5e7eb; --accent:#2563eb;
+      --link:#2563eb; --table-head:#f9fafb;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b1220; --fg:#e5e7eb; --muted:#9ca3af; --border:#1f2937;
+        --code-bg:#050814; --code-fg:#e5e7eb; --accent:#60a5fa;
+        --link:#60a5fa; --table-head:#0f172a;
+      }
+    }
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      line-height:1.7;
+    }
+    .container{
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+    header{
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1{ font-size: 2.2rem; line-height:1.2; margin:0 0 10px; }
+    .subtitle{ color:var(--muted); margin:0; font-size:1.02rem; }
+    hr{ border:0; border-top:1px solid var(--border); margin: 26px 0; }
+    h2{ margin-top: 34px; font-size: 1.6rem; }
+    h3{ margin-top: 26px; font-size: 1.25rem; }
+    h4{ margin-top: 22px; font-size: 1.08rem; }
+    p{ margin: 12px 0; }
+    ul{ margin: 10px 0 10px 22px; }
+    li{ margin: 6px 0; }
+    a{ color:var(--link); text-decoration:none; }
+    a:hover{ text-decoration:underline; }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: .95em;
+      background: rgba(127,127,127,.12);
+      padding: 0.12em 0.35em;
+      border-radius: 6px;
+    }
+    pre{
+      background: var(--code-bg);
+      color: var(--code-fg);
+      padding: 14px 16px;
+      border-radius: 12px;
+      overflow:auto;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    pre code{ background: none; padding:0; }
+    .callout{
+      border-left: 4px solid var(--accent);
+      background: rgba(37,99,235,.06);
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin: 16px 0;
+    }
+    .callout strong{ color: var(--fg); }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td{
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th{
+      background: var(--table-head);
+      font-weight: 600;
+    }
+    tr:last-child td{ border-bottom: 0; }
+    .toc{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 16px 8px;
+      background: rgba(127,127,127,.06);
+      margin: 18px 0 28px;
+    }
+    .toc h2{
+      margin: 0 0 10px;
+      font-size: 1.15rem;
+    }
+    .toc ul{ margin: 0 0 0 18px; padding:0; }
+    .toc li{ margin: 6px 0; }
+    .ref-list{ padding-left: 18px; }
+    .muted{ color: var(--muted); }
+  </style>
+</head>
+
+<body>
+  <main class="container">
+    <header>
+      <h1>From Graph Neural Networks to Graph Attention Networks: A Mathematical Deep Dive</h1>
+      <p class="subtitle">A blog-style walkthrough from message passing to Graph Attention Networks, with equations rendered via MathJax.</p>
+    </header>
+
+    <section class="toc" aria-label="Table of contents">
+      <h2>Contents</h2>
+      <ul>
+        <li><a href="#sec-1">1. Preliminaries: Graphs as Data Structures</a></li>
+        <li><a href="#sec-2">2. The Core Problem: Why Can't We Just Use Convolutional Neural Networks or Multi-Layer Perceptrons?</a></li>
+        <li><a href="#sec-3">3. Graph Neural Networks: The Message-Passing Framework</a></li>
+        <li><a href="#sec-4">4. The Attention Mechanism: A Brief Recap</a></li>
+        <li><a href="#sec-5">5. Graph Attention Networks — Veličković et al. (2018)</a></li>
+        <li><a href="#sec-6">6. GATv2: Fixing the Static Attention Problem — Brody et al. (2022)</a></li>
+        <li><a href="#sec-7">7. Putting It All Together: The Graph Attention Networks Pipeline</a></li>
+        <li><a href="#sec-8">8. Summary: Taxonomy of Aggregation Schemes</a></li>
+        <li><a href="#refs">References</a></li>
+      </ul>
+    </section>
+
+    <section id="sec-1">
+      <h2>1. Preliminaries: Graphs as Data Structures</h2>
+
+      <p>
+        Let \( \mathcal{G} = (\mathcal{V}, \mathcal{E}) \) be a graph where
+        \( \mathcal{V} = \{v_1, v_2, \dots, v_N\} \) is the set of \(N\) nodes and
+        \( \mathcal{E} \subseteq \mathcal{V} \times \mathcal{V} \) is the set of edges.
+      </p>
+
+      <p>We define:</p>
+      <ul>
+        <li><strong>Adjacency matrix</strong> \( \mathbf{A} \in \{0,1\}^{N \times N} \), where \(A_{ij}=1\) iff \( (v_i,v_j)\in\mathcal{E} \).</li>
+        <li><strong>Degree matrix</strong> \( \mathbf{D}=\mathrm{diag}(d_1,d_2,\dots,d_N) \), where \( d_i=\sum_j A_{ij} \).</li>
+        <li><strong>Node feature matrix</strong> \( \mathbf{X}\in\mathbb{R}^{N\times F} \), where each row \( \mathbf{x}_i\in\mathbb{R}^F \) is the feature vector of node \(v_i\).</li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Think of a social network. Each person is a node with features (age, interests, etc.), and friendships are edges. The adjacency matrix is the “who-knows-whom” lookup table, and the degree matrix tells you how many friends each person has.</p>
+      </div>
+
+      <hr />
+    </section>
+
+    <section id="sec-2">
+      <h2>2. The Core Problem: Why Can't We Just Use Convolutional Neural Networks or Multi-Layer Perceptrons?</h2>
+
+      <p>
+        Standard neural networks assume data lives on a <strong>regular grid</strong>
+        (images → 2D grid, sequences → 1D grid). Graphs have <strong>irregular topology</strong>:
+        each node has a different number of neighbors, there is no canonical ordering, and the structure itself carries information.
+      </p>
+
+      <p>
+        A Multi-Layer Perceptron applied independently to each node's features \( \mathbf{x}_i \) would be:
+      </p>
+
+      <p>
+        \[
+          \mathbf{h}_i = \sigma(\mathbf{W}\mathbf{x}_i + \mathbf{b})
+        \]
+      </p>
+
+      <p>
+        This completely <strong>ignores the graph structure</strong> — node \(v_i\) learns nothing from its neighbors.
+        We need a mechanism to aggregate neighborhood information while respecting the permutation-invariant nature of graphs.
+      </p>
+
+      <hr />
+    </section>
+
+    <section id="sec-3">
+      <h2>3. Graph Neural Networks: The Message-Passing Framework</h2>
+
+      <h3>3.1 The General Message-Passing Neural Network</h3>
+
+      <p>
+        Almost all Graph Neural Networks can be unified under the <strong>message-passing</strong> paradigm (Gilmer et al., 2017).
+        At layer \(l\), each node \(v_i\) updates its representation through three operations:
+      </p>
+
+      <h4>Step 1 — Message computation</h4>
+      <p>
+        \[
+          \mathbf{m}_{ij}^{(l)} = \phi\!\left(\mathbf{h}_i^{(l)}, \mathbf{h}_j^{(l)}, \mathbf{e}_{ij}\right),
+          \quad \forall j \in \mathcal{N}(i)
+        \]
+      </p>
+      <p>
+        where \( \mathcal{N}(i)=\{j : (v_i,v_j)\in\mathcal{E}\}\) is the neighborhood of node \(i\),
+        \( \phi \) is a message function, and \( \mathbf{e}_{ij} \) is an optional edge feature.
+      </p>
+
+      <h4>Step 2 — Aggregation</h4>
+      <p>
+        \[
+          \mathbf{m}_i^{(l)} = \bigoplus_{j \in \mathcal{N}(i)} \mathbf{m}_{ij}^{(l)}
+        \]
+      </p>
+      <p>where \( \bigoplus \) is a permutation-invariant aggregation (sum, mean, max, etc.).</p>
+
+      <h4>Step 3 — Update</h4>
+      <p>
+        \[
+          \mathbf{h}_i^{(l+1)} = \psi\!\left(\mathbf{h}_i^{(l)}, \mathbf{m}_i^{(l)}\right)
+        \]
+      </p>
+      <p>where \( \psi \) is an update function.</p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Imagine you are at a party. At each “round” of conversation (layer), you listen to what each of your friends is saying (message), combine all their opinions (aggregate), and update your own understanding (update). After \(L\) rounds, you have indirectly heard from friends-of-friends up to \(L\) hops away.</p>
+      </div>
+
+      <h3>3.2 Graph Convolutional Network — Kipf &amp; Welling (2017)</h3>
+
+      <p>
+        The Graph Convolutional Network is a foundational instantiation of this framework. It arises from simplifying spectral graph convolutions.
+      </p>
+
+      <p><strong>Spectral motivation.</strong> The graph Laplacian is \( \mathbf{L} = \mathbf{D} - \mathbf{A} \), and its normalized form is:</p>
+      <p>
+        \[
+          \tilde{\mathbf{L}} = \mathbf{I}_N - \mathbf{D}^{-1/2}\mathbf{A}\mathbf{D}^{-1/2}
+        \]
+      </p>
+
+      <p>
+        A spectral convolution on graphs is defined via the eigendecomposition
+        \( \tilde{\mathbf{L}} = \mathbf{U}\mathbf{\Lambda}\mathbf{U}^\top \):
+      </p>
+      <p>
+        \[
+          \mathbf{x} *_{\mathcal{G}} \mathbf{g}_\theta = \mathbf{U} \, g_\theta(\mathbf{\Lambda}) \, \mathbf{U}^\top \mathbf{x}
+        \]
+      </p>
+
+      <p>
+        This is \(O(N^2)\) and requires eigenvectors. Through approximations (Chebyshev polynomials truncated to first order), Kipf &amp; Welling arrive at:
+      </p>
+
+      <p>
+        \[
+          \mathbf{H}^{(l+1)} = \sigma\!\left(\hat{\mathbf{A}} \mathbf{H}^{(l)} \mathbf{W}^{(l)}\right)
+        \]
+      </p>
+
+      <p>
+        where \( \hat{\mathbf{A}} = \tilde{\mathbf{D}}^{-1/2}\tilde{\mathbf{A}}\tilde{\mathbf{D}}^{-1/2} \),
+        \( \tilde{\mathbf{A}}=\mathbf{A}+\mathbf{I}_N \) (self-loops), and
+        \( \tilde{\mathbf{D}}_{ii}=\sum_j \tilde{A}_{ij} \).
+      </p>
+
+      <p><strong>Per-node form</strong> (message passing):</p>
+      <p>
+        \[
+          \mathbf{h}_i^{(l+1)} =
+          \sigma\!\left(
+            \sum_{j \in \mathcal{N}(i)\cup\{i\}}
+            \frac{1}{\sqrt{\tilde{d}_i \tilde{d}_j}}
+            \mathbf{W}^{(l)} \mathbf{h}_j^{(l)}
+          \right)
+        \]
+      </p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Each node computes a weighted average of its neighbors’ (and its own) features, then applies a linear transformation and nonlinearity. The term \( \frac{1}{\sqrt{\tilde{d}_i \tilde{d}_j}} \) normalizes by degrees so high-degree nodes do not dominate.</p>
+      </div>
+
+      <h3>3.3 The Fundamental Limitation of Graph Convolutional Networks</h3>
+
+      <p>
+        In Graph Convolutional Networks, the neighbor weight is:
+      </p>
+      <p>
+        \[
+          c_{ij} = \frac{1}{\sqrt{\tilde{d}_i \tilde{d}_j}}
+        \]
+      </p>
+
+      <p>
+        This depends only on topology (degrees), not on features \( \mathbf{h}_i, \mathbf{h}_j \).
+        It is a static, isotropic weighting scheme.
+      </p>
+
+      <p>
+        In many settings, not all neighbors are equally important. We want anisotropic, data-dependent weights — exactly what attention provides.
+      </p>
+
+      <hr />
+    </section>
+
+    <section id="sec-4">
+      <h2>4. The Attention Mechanism: A Brief Recap</h2>
+
+      <p>
+        Given a query \( \mathbf{q} \), keys \( \{\mathbf{k}_j\} \), and values \( \{\mathbf{v}_j\} \), attention computes:
+      </p>
+
+      <p>
+        \[
+          \mathrm{Attention}(\mathbf{q}, \mathbf{K}, \mathbf{V}) = \sum_j \alpha_j \mathbf{v}_j
+        \]
+      </p>
+
+      <p>where:</p>
+      <p>
+        \[
+          \alpha_j = \frac{\exp(e(\mathbf{q}, \mathbf{k}_j))}{\sum_{j'} \exp(e(\mathbf{q}, \mathbf{k}_{j'}))}
+        \]
+      </p>
+
+      <p>
+        and \( e(\cdot,\cdot) \) is a compatibility function (dot-product, additive, etc.).
+      </p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Attention is a soft dictionary lookup: compute relevance scores for each entry and return a weighted blend of values.</p>
+      </div>
+
+      <hr />
+    </section>
+
+    <section id="sec-5">
+      <h2>5. Graph Attention Networks — Veličković et al. (2018)</h2>
+
+      <h3>5.1 Core Idea</h3>
+      <p>
+        Replace the fixed normalization coefficients \(c_{ij}\) of Graph Convolutional Networks with learned, data-dependent attention coefficients \( \alpha_{ij} \) computed from node features.
+      </p>
+
+      <h3>5.2 Step-by-Step Mathematical Derivation</h3>
+
+      <p><strong>Input:</strong> Node features \( \mathbf{h}=\{\mathbf{h}_1,\dots,\mathbf{h}_N\} \), where \( \mathbf{h}_i\in\mathbb{R}^F \).</p>
+      <p><strong>Output:</strong> Updated node features \( \mathbf{h}'=\{\mathbf{h}'_1,\dots,\mathbf{h}'_N\} \), where \( \mathbf{h}'_i\in\mathbb{R}^{F'} \).</p>
+
+      <h4>Step 1: Shared Linear Transformation</h4>
+      <p>
+        \[
+          \mathbf{z}_i = \mathbf{W}\mathbf{h}_i \in \mathbb{R}^{F'}
+        \]
+      </p>
+      <p>
+        This projects nodes into a common latent space of dimension \(F'\) where attention scores can be computed.
+      </p>
+
+      <h4>Step 2: Pairwise Attention Coefficients (Raw Scores)</h4>
+      <p>
+        \[
+          e_{ij} =
+          \mathrm{LeakyReLU}\!\left(
+            \mathbf{a}^\top [\mathbf{z}_i \| \mathbf{z}_j]
+          \right)
+        \]
+      </p>
+      <p>
+        where \( [\mathbf{z}_i \| \mathbf{z}_j]\in\mathbb{R}^{2F'} \) is concatenation and \( \mathbf{a}\in\mathbb{R}^{2F'} \) is learnable.
+      </p>
+
+      <p><strong>Unpacking the math.</strong> Split \( \mathbf{a}=[\mathbf{a}_1 \| \mathbf{a}_2] \), \( \mathbf{a}_1,\mathbf{a}_2\in\mathbb{R}^{F'} \):</p>
+      <p>
+        \[
+          \mathbf{a}^\top [\mathbf{z}_i \| \mathbf{z}_j] =
+          \mathbf{a}_1^\top \mathbf{z}_i + \mathbf{a}_2^\top \mathbf{z}_j
+        \]
+      </p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> The score combines a receiver-side term (node \(i\)) and a sender-side term (neighbor \(j\)). This is additive attention.</p>
+      </div>
+
+      <h4>Step 3: Masked Attention (Graph Structure Injection)</h4>
+      <p>
+        Compute \(e_{ij}\) only for \(j \in \mathcal{N}(i)\cup\{i\}\). Formally:
+      </p>
+      <p>
+        \[
+          \mathrm{Mask}(i,j)=
+          \begin{cases}
+            e_{ij} & \text{if } j\in\mathcal{N}(i)\cup\{i\} \\
+            -\infty & \text{otherwise}
+          \end{cases}
+        \]
+      </p>
+
+      <h4>Step 4: Softmax Normalization</h4>
+      <p>
+        \[
+          \alpha_{ij} =
+          \mathrm{softmax}_j(e_{ij}) =
+          \frac{\exp(e_{ij})}{\sum_{k\in\mathcal{N}(i)\cup\{i\}} \exp(e_{ik})}
+        \]
+      </p>
+
+      <ul>
+        <li>\(\alpha_{ij} \ge 0\)</li>
+        <li>\(\sum_{j\in\mathcal{N}(i)\cup\{i\}} \alpha_{ij}=1\)</li>
+        <li>Asymmetric in general: \(\alpha_{ij}\neq\alpha_{ji}\)</li>
+      </ul>
+
+      <h4>Step 5: Neighborhood Aggregation</h4>
+      <p>
+        \[
+          \mathbf{h}'_i =
+          \sigma\!\left(
+            \sum_{j\in\mathcal{N}(i)\cup\{i\}} \alpha_{ij}\mathbf{z}_j
+          \right)
+          =
+          \sigma\!\left(
+            \sum_{j\in\mathcal{N}(i)\cup\{i\}} \alpha_{ij}\mathbf{W}\mathbf{h}_j
+          \right)
+        \]
+      </p>
+
+      <h4>Comparison with Graph Convolutional Networks</h4>
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Graph Convolutional Network</th>
+            <th>Graph Attention Network</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Aggregation</strong></td>
+            <td>\(\mathbf{h}'_i = \sigma(\sum_j c_{ij}\mathbf{W}\mathbf{h}_j)\)</td>
+            <td>\(\mathbf{h}'_i = \sigma(\sum_j \alpha_{ij}\mathbf{W}\mathbf{h}_j)\)</td>
+          </tr>
+          <tr>
+            <td><strong>Weights</strong></td>
+            <td>\(c_{ij}=\frac{1}{\sqrt{\tilde{d}_i\tilde{d}_j}}\) (fixed)</td>
+            <td>\(\alpha_{ij}=\mathrm{softmax}_j(e_{ij})\) (learned)</td>
+          </tr>
+          <tr>
+            <td><strong>Parameters</strong></td>
+            <td>\(\mathbf{W}\)</td>
+            <td>\(\mathbf{W},\mathbf{a}\)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.3 Multi-Head Attention</h3>
+      <p>
+        Graph Attention Networks use \(K\) attention heads, each with parameters \((\mathbf{W}^k,\mathbf{a}^k)\).
+      </p>
+
+      <p><strong>Intermediate layers (concatenation):</strong></p>
+      <p>
+        \[
+          \mathbf{h}'_i =
+          \big\|_{k=1}^K
+          \sigma\!\left(
+            \sum_{j\in\mathcal{N}(i)\cup\{i\}}
+            \alpha_{ij}^k \mathbf{W}^k \mathbf{h}_j
+          \right)
+        \]
+      </p>
+
+      <p><strong>Final layer (averaging):</strong></p>
+      <p>
+        \[
+          \mathbf{h}'_i =
+          \sigma\!\left(
+            \frac{1}{K}\sum_{k=1}^K
+            \sum_{j\in\mathcal{N}(i)\cup\{i\}}
+            \alpha_{ij}^k \mathbf{W}^k \mathbf{h}_j
+          \right)
+        \]
+      </p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Multi-head attention provides multiple “perspectives” for neighbor importance. Concatenation preserves all perspectives; averaging produces a consensus.</p>
+      </div>
+
+      <h3>5.4 Computational Complexity Analysis</h3>
+      <p>For a single Graph Attention Network layer with \(K\) heads:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Complexity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Linear projection \((\mathbf{W}^k\mathbf{h}_j)\) for all nodes and heads</td>
+            <td>\(O(K\cdot N\cdot F\cdot F')\)</td>
+          </tr>
+          <tr>
+            <td>Attention scores \((e_{ij})\) for all edges</td>
+            <td>\(O(K\cdot |\mathcal{E}|\cdot F')\)</td>
+          </tr>
+          <tr>
+            <td>Softmax normalization</td>
+            <td>\(O(K\cdot |\mathcal{E}|)\)</td>
+          </tr>
+          <tr>
+            <td>Aggregation</td>
+            <td>\(O(K\cdot |\mathcal{E}|\cdot F')\)</td>
+          </tr>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td>\(O(K\cdot N\cdot F\cdot F' + K\cdot |\mathcal{E}|\cdot F')\)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        For sparse graphs, \( |\mathcal{E}| \ll N^2 \), keeping this efficient and in the same complexity class as Graph Convolutional Networks (up to constant factors).
+      </p>
+
+      <h3>5.5 Key Theoretical Properties</h3>
+
+      <p><strong>Property 1: Permutation Equivariance.</strong> For any permutation matrix \(\mathbf{P}\):</p>
+      <p>
+        \[
+          \mathrm{GAT}(\mathbf{P}\mathbf{H}, \mathbf{P}\mathbf{A}\mathbf{P}^\top)
+          =
+          \mathbf{P}\cdot \mathrm{GAT}(\mathbf{H}, \mathbf{A})
+        \]
+      </p>
+      <p>
+        This holds because attention coefficients depend on features, not node indices.
+      </p>
+
+      <p><strong>Property 2: Graph Convolutional Networks as a special case.</strong> If we fix
+        \(\alpha_{ij}=\frac{1}{|\mathcal{N}(i)\cup\{i\}|}\) (uniform attention), Graph Attention Networks reduce to a mean-aggregation Graph Neural Network similar to Graph Convolutional Networks (without degree normalization).</p>
+
+      <p><strong>Property 3: Expressivity.</strong> Graph Attention Networks can assign different importances to different neighbors of the same node, which is not possible in Graph Convolutional Networks. Under mild assumptions, the realizable function class of Graph Attention Networks strictly contains that of Graph Convolutional Networks.</p>
+
+      <hr />
+    </section>
+
+    <section id="sec-6">
+      <h2>6. GATv2: Fixing the Static Attention Problem — Brody et al. (2022)</h2>
+
+      <h3>6.1 The Problem with Graph Attention Networks Attention</h3>
+
+      <p>Recall the Graph Attention Networks scoring function decomposes as:</p>
+      <p>
+        \[
+          e_{ij} =
+          \mathrm{LeakyReLU}(\mathbf{a}_1^\top \mathbf{W}\mathbf{h}_i + \mathbf{a}_2^\top \mathbf{W}\mathbf{h}_j)
+        \]
+      </p>
+
+      <p>
+        Because \(\mathbf{a}_1^\top \mathbf{W}\mathbf{h}_i\) is constant across all neighbors \(j\) for node \(i\),
+        the ranking of neighbors is determined entirely by \(\mathbf{a}_2^\top \mathbf{W}\mathbf{h}_j\).
+        This yields <strong>static attention</strong> — ranking does not depend on the query node.
+      </p>
+
+      <p class="muted">
+        Formally, for any two nodes \(i,i'\) sharing the same neighborhood, \(\mathrm{argsort}_j(\alpha_{ij})=\mathrm{argsort}_j(\alpha_{i'j})\).
+      </p>
+
+      <h3>6.2 GATv2: Dynamic Attention</h3>
+
+      <p>GATv2 applies the nonlinearity before the final projection:</p>
+      <p>
+        \[
+          e_{ij}^{\mathrm{v2}} =
+          \mathbf{a}^\top \mathrm{LeakyReLU}\!\left(\mathbf{W}[\mathbf{h}_i \| \mathbf{h}_j]\right)
+        \]
+      </p>
+
+      <p>Or equivalently:</p>
+      <p>
+        \[
+          e_{ij}^{\mathrm{v2}} =
+          \mathbf{a}^\top \mathrm{LeakyReLU}\!\left(\mathbf{W}_1\mathbf{h}_i + \mathbf{W}_2\mathbf{h}_j\right)
+        \]
+      </p>
+
+      <p>
+        This introduces interactions between \(\mathbf{h}_i\) and \(\mathbf{h}_j\) before the final projection, enabling dynamic attention.
+      </p>
+
+      <div class="callout">
+        <p><strong>Intuition.</strong> Original Graph Attention Networks evaluate each neighbor’s “quality” mostly independently. GATv2 evaluates neighbors relative to the query node’s state — choosing whom to listen to depends on the current context.</p>
+      </div>
+
+      <hr />
+    </section>
+
+    <section id="sec-7">
+      <h2>7. Putting It All Together: The Graph Attention Networks Pipeline</h2>
+
+      <p>For node classification on graph \( \mathcal{G} \) with \(C\) classes:</p>
+
+      <p>
+        \[
+          \underbrace{\mathbf{X} \in \mathbb{R}^{N \times F}}_{\text{Input features}}
+          \xrightarrow{\text{GAT Layer 1}}
+          \underbrace{\mathbf{H}^{(1)} \in \mathbb{R}^{N \times KF'}}_{\text{Multi-head concatenation}}
+          \xrightarrow{\text{GAT Layer 2}}
+          \underbrace{\mathbf{H}^{(2)} \in \mathbb{R}^{N \times C}}_{\text{Multi-head averaging}}
+          \xrightarrow{\mathrm{softmax}}
+          \hat{\mathbf{Y}} \in \mathbb{R}^{N \times C}
+        \]
+      </p>
+
+      <p>The loss is cross-entropy over labeled nodes \( \mathcal{V}_L \subseteq \mathcal{V} \):</p>
+
+      <p>
+        \[
+          \mathcal{L} = -\sum_{i \in \mathcal{V}_L} \sum_{c=1}^{C} y_{ic} \log \hat{y}_{ic}
+        \]
+      </p>
+
+      <p>
+        Parameters \( \{\mathbf{W}^k, \mathbf{a}^k\} \) are trained end-to-end via backpropagation.
+      </p>
+
+      <hr />
+    </section>
+
+    <section id="sec-8">
+      <h2>8. Summary: Taxonomy of Aggregation Schemes</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Aggregation Weight \(w_{ij}\)</th>
+            <th>Data-Dependent?</th>
+            <th>Learnable?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mean-pool Graph Neural Network</td>
+            <td>\(\frac{1}{|\mathcal{N}(i)|}\)</td>
+            <td>No</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Graph Convolutional Network</td>
+            <td>\(\frac{1}{\sqrt{\tilde{d}_i\tilde{d}_j}}\)</td>
+            <td>No</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>GraphSAGE (mean)</td>
+            <td>\(\frac{1}{|\mathcal{N}(i)|}\)</td>
+            <td>No</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>Graph Attention Network</td>
+            <td>\(\mathrm{softmax}_j(\mathrm{LeakyReLU}(\mathbf{a}^\top[\mathbf{W}\mathbf{h}_i \| \mathbf{W}\mathbf{h}_j]))\)</td>
+            <td>Yes (static)</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>GATv2</td>
+            <td>\(\mathrm{softmax}_j(\mathbf{a}^\top \mathrm{LeakyReLU}(\mathbf{W}_1\mathbf{h}_i + \mathbf{W}_2\mathbf{h}_j))\)</td>
+            <td>Yes (dynamic)</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td>Graph Transformer</td>
+            <td>\(\mathrm{softmax}_j\left(\frac{(\mathbf{W}_Q\mathbf{h}_i)^\top(\mathbf{W}_K\mathbf{h}_j)}{\sqrt{d_k}}\right)\)</td>
+            <td>Yes (dynamic)</td>
+            <td>Yes</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+    </section>
+
+    <section id="refs">
+      <h2>References</h2>
+      <ol class="ref-list">
+        <li>Kipf, T.N. &amp; Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. <em>ICLR</em>.</li>
+        <li>Veličković, P. et al. (2018). Graph Attention Networks. <em>ICLR</em>.</li>
+        <li>Gilmer, J. et al. (2017). Neural Message Passing for Quantum Chemistry. <em>ICML</em>.</li>
+        <li>Brody, S., Alon, U. &amp; Yahav, E. (2022). How Attentive are Graph Attention Networks? <em>ICLR</em>.</li>
+        <li>Vaswani, A. et al. (2017). Attention Is All You Need. <em>NeurIPS</em>.</li>
+      </ol>
+      <p class="muted">Tip: Host this HTML file as-is for a blog post. Math will render automatically via MathJax.</p>
+    </section>
+  </main>
+</body>
+</html>
